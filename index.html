@@ -1,1648 +1,327 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#090e1b">
-<title>F1 Strategy Manager V51</title>
-<style>
-:root{
- --bg:#07101c;--panel:#0b1522;--panel2:#0e1a2a;--line:#26384d;
- --text:#f8fafc;--muted:#9eacc0;--red:#ef3340;--yellow:#facc15;
- --white:#e5e7eb;--green:#39d98a;--blue:#2693ff;--violet:#c084fc;
-}
-*{box-sizing:border-box}
-body{
- margin:0;color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
- background:
- radial-gradient(circle at 50% -20%,rgba(38,147,255,.14),transparent 34%),
- linear-gradient(180deg,#07111e 0%,#050b13 100%);
- padding:18px;
-}
-.wrap{max-width:1500px;margin:auto}
-.apphead{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:2px 8px 16px;border-bottom:1px solid rgba(148,163,184,.22);margin-bottom:14px}
-.brand{display:flex;align-items:center;gap:12px}
-.f1mark{font-weight:950;font-style:italic;font-size:25px;color:#ff2638;letter-spacing:-2px}
-h1{font-size:25px;margin:0;font-style:italic;letter-spacing:.2px}
-.version{font-size:11px;color:#a8b4c7;margin-left:5px;font-style:normal}
-.tagline{color:#aab8ce;font-size:13px}
-.savepill{border:1px solid rgba(57,217,138,.45);color:#79e8ad;background:rgba(22,101,52,.15);border-radius:999px;padding:7px 12px;font-size:12px;font-weight:800;white-space:nowrap}
-.card{
- background:linear-gradient(180deg,rgba(13,25,40,.97),rgba(8,17,28,.97));
- border:1px solid #24364b;border-radius:13px;padding:15px;margin:12px 0;
- box-shadow:0 12px 30px rgba(0,0,0,.16);
-}
-.card h2{font-size:16px;text-transform:uppercase;letter-spacing:.35px;margin:0 0 13px;padding-bottom:10px;border-bottom:1px solid rgba(148,163,184,.18)}
-.small,.muted{color:var(--muted);font-size:12px;line-height:1.5}
-.g2{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.tyre,.metric{
- background:linear-gradient(180deg,#0c1827,#09131f);border:1px solid #26384d;border-radius:11px;padding:13px;
-}
-.tyre>b{font-size:15px}
-.tyre:nth-child(1){border-top:2px solid var(--red)}
-.tyre:nth-child(2){border-top:2px solid var(--yellow)}
-.tyre:nth-child(3){border-top:2px solid #d8dee8}
-label{display:block;color:#aebbd0;font-size:11px;margin:8px 0 5px}
-input,select{
- width:100%;padding:9px 10px;border-radius:8px;border:1px solid #31445d;
- background:#0a1422;color:#fff;font-size:14px;outline:none;
- box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
-}
-input:focus{border-color:#55749a;box-shadow:0 0 0 2px rgba(38,147,255,.1)}
-button{
- width:100%;padding:12px;margin-top:12px;border:1px solid #435872;border-radius:9px;
- background:linear-gradient(180deg,#18263a,#111c2c);color:#fff;font-weight:850;font-size:13px;
- text-transform:uppercase;letter-spacing:.5px;cursor:pointer;
-}
-button:hover{border-color:#6c84a4;background:#1a2a40}
-.timegrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:7px}
-.timeres{margin-top:8px;padding:8px 9px;border-radius:8px;background:#08121e;border:1px solid #203248;font-size:11px;line-height:1.55;color:#aebbd0}
-.timeres b{font-size:12px;color:#fff}
-.setctl{display:flex;align-items:center;gap:7px;margin-top:5px}
-.setctl button{width:36px;height:36px;padding:0;margin:0;border-radius:8px;font-size:18px;background:#111d2d}
-.setctl input{width:48px;text-align:center;padding:7px}
-.chartwrap{position:relative}
-#chart{
- width:100%;height:430px;background:
- linear-gradient(rgba(67,86,111,.10) 1px,transparent 1px),
- linear-gradient(90deg,rgba(67,86,111,.10) 1px,transparent 1px),
- #07111d;
- background-size:44px 44px;border:1px solid #203248;border-radius:10px;display:block;touch-action:manipulation
-}
-.charttip{position:absolute;display:none;pointer-events:none;min-width:145px;padding:9px 11px;border-radius:8px;background:#08121e;border:1px solid #526984;color:#f8fafc;font-size:12px;line-height:1.45;box-shadow:0 10px 28px rgba(0,0,0,.35);z-index:4}
-.strats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.strat{
- position:relative;background:linear-gradient(180deg,#0b1725,#08121d);border:1px solid #2b3d53;border-radius:11px;padding:13px;overflow:hidden
-}
-.strat:first-child{border-color:rgba(57,217,138,.7);box-shadow:inset 0 2px 0 rgba(57,217,138,.5)}
-.strat h3{margin:0 0 9px;font-size:14px;text-transform:uppercase;letter-spacing:.25px}
-.timeline{display:flex;width:100%;height:25px;border-radius:7px;overflow:hidden;margin:9px 0 11px;border:1px solid #2d4057;background:#07101b}
-.seg{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;min-width:0}
-.seg.soft{background:#a91f2b}.seg.medium{background:#a77d00}.seg.hard{background:#b9c1cc;color:#09111d}
-.stint{padding:8px 9px;border-radius:8px;background:#091522;border:1px solid #1f3145;margin:6px 0;font-size:12px}
-.stopmeta{margin:6px 0;padding:7px 9px;border-radius:8px;background:#0a1420;border-left:2px solid #667a94;font-size:11px;line-height:1.5;color:#b5c0d1}
-.stratdelta{margin:8px 0;padding:7px 9px;border-radius:8px;background:rgba(57,217,138,.08);border:1px solid rgba(57,217,138,.22);font-size:11px;font-weight:700}
-.tactic{margin:7px 0;padding:8px 9px;border-radius:8px;background:#0a1420;border:1px solid #26394e;font-size:11px;line-height:1.45;color:#b7c4d6}
-.pacechart{margin:9px 0 5px;padding:8px;border-radius:8px;background:#06101b;border:1px solid #203248}
-.pacetitle{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;margin-bottom:5px}
-.pacechart canvas{width:100%;height:142px!important;min-height:142px!important;display:block;background:transparent;border:0;border-radius:6px}
-.badge{display:inline-block;border:1px solid #3a4e68;border-radius:999px;padding:3px 8px;font-size:10px;color:#cbd5e1}
-.best{font-size:20px;font-weight:900;color:#86efac}
-.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.metric b{display:block;font-size:16px}
-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}td,th{padding:8px;border-bottom:1px solid #26384d;text-align:left}
-@media(max-width:900px){.grid3,.strats{grid-template-columns:1fr}.g2{grid-template-columns:1fr 1fr}.tagline{display:none}}
-@media(max-width:560px){
- body{padding:9px}.apphead{align-items:flex-start}.savepill{font-size:10px;padding:6px 8px}
- .g2,.timegrid{grid-template-columns:1fr}.card{padding:12px}.f1mark{font-size:21px}h1{font-size:19px}
- #chart{height:390px}
-}
-
-.profilegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.profileactions{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-top:10px}
-.profileactions.secondary{grid-template-columns:1fr 1fr}
-.profileactions button{margin-top:0}
-.profilestatus{margin-top:10px;padding:9px 10px;border:1px solid #26384d;border-radius:8px;background:#09131f;color:#9eacc0;font-size:12px;line-height:1.4}
-.profilestatus.ok{border-color:rgba(57,217,138,.35);color:#79e8ad;background:rgba(22,101,52,.10)}
-.profilestatus.warn{border-color:rgba(250,204,21,.35);color:#fde68a;background:rgba(133,77,14,.10)}
-@media(max-width:700px){.profilegrid,.profileactions,.profileactions.secondary{grid-template-columns:1fr}}
-
-
-.dropboxbox{margin-top:14px;padding-top:14px;border-top:1px solid rgba(148,163,184,.18)}
-.dropboxhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
-.cloudpill{border:1px solid #31445d;border-radius:999px;padding:6px 10px;color:#9eacc0;background:#09131f;font-size:11px;font-weight:800;white-space:nowrap}
-.cloudpill.on{border-color:rgba(57,217,138,.42);color:#79e8ad;background:rgba(22,101,52,.12)}
-.dropboxactions{display:grid;grid-template-columns:2fr 1.2fr 1fr;gap:8px;margin-top:10px}
-.dropboxactions button{margin-top:0}
-@media(max-width:700px){.dropboxactions{grid-template-columns:1fr}.dropboxhead{align-items:flex-start;flex-direction:column}}
-
-
-.labgrid{display:grid;grid-template-columns:1.05fr .95fr;gap:12px}
-.labcontrols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.labrow{display:grid;grid-template-columns:1fr 42px 42px;gap:7px;align-items:end;margin-top:8px}
-.labrow button{width:42px;margin:0;padding:9px 0}
-.labresult{background:linear-gradient(180deg,#08131f,#06101a);border:1px solid #26384d;border-radius:10px;padding:12px}
-.labheadline{font-size:18px;font-weight:900;margin:3px 0 6px}
-.labdelta{font-weight:900}.labgood{color:var(--green)}.labbad{color:#ff7b85}.labneutral{color:var(--muted)}
-.labstints{display:grid;gap:6px;margin-top:9px}
-.labstint{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:7px 8px;border:1px solid #22354a;border-radius:8px;background:#091522;font-size:12px}
-@media(max-width:900px){.labgrid{grid-template-columns:1fr}}
-@media(max-width:560px){.labcontrols{grid-template-columns:1fr}}
-
-
-.histbox{margin-top:12px;padding:12px;border:1px solid #26384d;border-radius:10px;background:linear-gradient(180deg,#091522,#07111c)}
-.histactions,.histselects{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.histselects{margin-top:10px}.histlist{display:grid;gap:8px;margin-top:10px}
-.histitem{border:1px solid #26384d;border-radius:9px;padding:10px;background:#08131f}
-.histtitle{font-weight:850}.histmeta{font-size:11px;color:var(--muted)}
-.histcmp{margin-top:10px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.histmetric{border:1px solid #22354a;border-radius:8px;padding:8px;background:#07111c}
-.histmetric b{display:block;margin-bottom:3px}
-.histpositive{color:var(--green);font-weight:800}.histnegative{color:#ff7b85;font-weight:800}.histneutral{color:var(--muted);font-weight:800}
-@media(max-width:700px){.histactions,.histselects,.histcmp{grid-template-columns:1fr}}
-
-/* Race Card */
-.racecardbar{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.racecardopen{width:auto;margin:0;padding:10px 14px}
-.raceoverlay{position:fixed;inset:0;z-index:9999;background:linear-gradient(180deg,#07111e,#03070d);padding:14px;overflow:auto;display:none}
-.raceoverlay.open{display:block}
-.raceinner{max-width:760px;margin:0 auto}
-.racehead{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid #26384d}
-.racehead h2{margin:0;font-size:22px;font-style:italic}
-.raceclose{width:auto;margin:0;padding:9px 12px}
-.racetrack{font-size:13px;color:var(--muted);margin-top:3px}
-.raceplan{margin-top:14px;border:1px solid #2b3d53;border-radius:14px;padding:14px;background:linear-gradient(180deg,#0b1725,#07111c)}
-.racecompound{font-size:25px;font-weight:950;letter-spacing:.3px}
-.racearrow{text-align:center;color:var(--muted);font-size:22px;margin:5px 0}
-.racepit{border:1px solid rgba(57,217,138,.55);background:rgba(22,101,52,.12);border-radius:10px;padding:12px;text-align:center;font-size:20px;font-weight:950}
-.racestats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}
-.racestat{border:1px solid #26384d;border-radius:10px;padding:10px;background:#08131f}
-.racestat .small{display:block}.racestat b{font-size:16px}
-.racelapbox{margin-top:14px;text-align:center;border:1px solid #26384d;border-radius:14px;padding:14px;background:#08131f}
-.racelapcontrols{display:grid;grid-template-columns:64px 1fr 64px;gap:9px;align-items:center;margin-top:8px}
-.racelapcontrols button{margin:0;font-size:22px;padding:12px 0}
-.racelapnum{font-size:34px;font-weight:950}
-.racemessage{margin-top:12px;padding:14px;border-radius:11px;border:1px solid #31445d;text-align:center;font-weight:950;font-size:20px}
-.racemessage.now{border-color:rgba(57,217,138,.75);color:#79e8ad;background:rgba(22,101,52,.14)}
-.racealt{margin-top:12px;border:1px solid #26384d;border-radius:10px;padding:10px;background:#08131f}
-body.racecard-active{overflow:hidden}
-@media(max-width:560px){.raceoverlay{padding:9px}.racecompound{font-size:22px}.racestats{grid-template-columns:1fr 1fr}.racehead h2{font-size:19px}}
-
-
-/* Version 5.6 - Strategy Command Center */
-.commandcenter{
- display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.55fr);gap:12px;
- margin:12px 0;
-}
-.commandmain,.commandstats{
- background:linear-gradient(180deg,#0b1725,#07111d);
- border:1px solid #2a3d54;border-radius:13px;padding:14px;
-}
-.commandmain{border-top:2px solid rgba(57,217,138,.8)}
-.commandeyebrow{
- font-size:11px;font-weight:900;letter-spacing:.7px;text-transform:uppercase;color:#79e8ad;margin-bottom:8px
-}
-.commandtitle{font-size:24px;font-weight:950;font-style:italic;margin-bottom:10px}
-.commandtimeline{display:flex;align-items:stretch;gap:8px;min-height:76px}
-.commandseg{
- flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
- border:1px solid #31445d;border-radius:10px;background:#08131f;padding:10px;text-align:center
-}
-.commandseg strong{font-size:18px}.commandseg span{font-size:11px;color:var(--muted);margin-top:4px}
-.commandpit{
- align-self:center;white-space:nowrap;border:1px solid rgba(57,217,138,.5);
- color:#79e8ad;background:rgba(22,101,52,.12);border-radius:999px;padding:8px 10px;
- font-size:12px;font-weight:900
-}
-.commandstats{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.commandmetric{
- border:1px solid #26384d;border-radius:10px;padding:10px;background:#08131f;min-height:64px
-}
-.commandmetric .small{display:block;text-transform:uppercase;letter-spacing:.4px}
-.commandmetric b{display:block;font-size:18px;margin-top:5px}
-@media(max-width:900px){.commandcenter{grid-template-columns:1fr}}
-@media(max-width:560px){
- .commandtimeline{flex-direction:column}
- .commandpit{align-self:stretch;text-align:center}
- .commandstats{grid-template-columns:1fr 1fr}
- .commandtitle{font-size:20px}
-}
-
-
-/* Version 5.7 - UI cleanup package */
-.section-toggle{
- display:flex;align-items:center;justify-content:space-between;gap:10px;
- cursor:pointer;user-select:none
-}
-.section-toggle .chev{font-size:18px;color:var(--muted);transition:transform .2s ease}
-.collapsed .chev{transform:rotate(-90deg)}
-.collapsible-body{display:block}
-.collapsed + .collapsible-body{display:none}
-.strategy-status{
- display:flex;flex-wrap:wrap;gap:7px;margin-top:10px
-}
-.statuschip{
- border:1px solid #31445d;background:#08131f;border-radius:999px;
- padding:6px 9px;font-size:11px;font-weight:850;color:#cbd5e1
-}
-.statuschip.ok{border-color:rgba(57,217,138,.45);color:#79e8ad;background:rgba(22,101,52,.10)}
-.commandpit{font-size:13px;padding:9px 12px}
-.commandpit strong{font-size:16px}
-.strategy-detail-toggle{
- width:auto;margin:0 0 10px 0;padding:9px 12px
-}
-.strategy-details-hidden{display:none!important}
-.track-subtitle{
- margin-top:3px;font-size:12px;color:#9fb0c6;text-transform:uppercase;letter-spacing:.55px
-}
-.tyrelabel{display:inline-flex;align-items:center;gap:5px}
-.chartclean #chart{
- background:
- linear-gradient(rgba(67,86,111,.06) 1px,transparent 1px),
- linear-gradient(90deg,rgba(67,86,111,.06) 1px,transparent 1px),
- #07111d;
- border-color:#1d2d40
-}
-@media(max-width:560px){
- .statuschip{font-size:10px;padding:5px 8px}
-}
-
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#111111" />
+  <title>Link WebApp</title>
+  <style>
+    :root {
+      --bg: #f4f5f7;
+      --card: #ffffff;
+      --text: #161616;
+      --muted: #737373;
+      --line: #e4e4e7;
+      --primary: #161616;
+      --danger: #b42318;
+      --radius: 16px;
+      --shadow: 0 8px 30px rgba(0,0,0,.06);
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+    button, input, select { font: inherit; }
+    button { touch-action: manipulation; }
+    .wrap { width: min(860px, calc(100% - 24px)); margin: 0 auto; padding: 24px 0 48px; }
+    .topbar { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:22px; }
+    h1 { margin:0; font-size:clamp(28px, 6vw, 40px); line-height:1.05; }
+    .brand { text-align:right; flex:0 0 auto; }
+    .version { font-weight:700; font-size:14px; }
+    .maker { margin-top:3px; font-size:12px; color:var(--muted); }
+    .toolbar { display:grid; grid-template-columns:1fr auto auto; gap:10px; margin-bottom:16px; }
+    .btn, .field, .select {
+      min-height:46px; border:1px solid var(--line); border-radius:12px; background:#fff; color:var(--text);
+    }
+    .field, .select { width:100%; padding:0 13px; outline:none; }
+    .field:focus, .select:focus { border-color:#999; }
+    .btn { padding:0 16px; font-weight:700; cursor:pointer; }
+    .btn.primary { background:var(--primary); color:#fff; border-color:var(--primary); }
+    .btn.ghost { background:#fff; }
+    .btn.danger { color:var(--danger); }
+    .panel { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); margin-bottom:16px; }
+    .panel.hidden { display:none; }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .form-grid .full { grid-column:1/-1; }
+    .form-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:10px; }
+    .sync-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .sync-row .field { flex:1 1 260px; }
+    .sync-status { margin-top:10px; font-size:13px; color:var(--muted); }
+    .filters { display:grid; grid-template-columns:1fr 180px; gap:10px; margin-bottom:14px; }
+    .list { display:flex; flex-direction:column; gap:10px; }
+    .item { display:flex; align-items:center; gap:12px; padding:14px; background:#fff; border:1px solid var(--line); border-radius:14px; box-shadow:0 3px 14px rgba(0,0,0,.03); }
+    .item-main { display:flex; align-items:center; gap:12px; flex:1; min-width:0; cursor:pointer; }
+    .favicon { width:32px; height:32px; border-radius:8px; flex:0 0 auto; background:#eee; object-fit:contain; }
+    .item-text { min-width:0; }
+    .title { font-weight:750; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .meta { margin-top:4px; color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .tags { margin-top:6px; display:flex; gap:5px; flex-wrap:wrap; }
+    .tag { font-size:11px; padding:3px 7px; border-radius:999px; background:#f1f1f2; }
+    .item-actions { display:flex; gap:4px; }
+    .icon-btn { border:0; background:transparent; border-radius:9px; min-width:40px; min-height:40px; cursor:pointer; font-size:18px; }
+    .icon-btn:hover { background:#f4f4f5; }
+    .empty { text-align:center; color:var(--muted); padding:44px 16px; background:#fff; border:1px dashed #d4d4d8; border-radius:14px; }
+    .small { font-size:12px; color:var(--muted); line-height:1.5; }
+    dialog { width:min(520px, calc(100% - 24px)); border:0; border-radius:18px; padding:0; box-shadow:0 24px 80px rgba(0,0,0,.25); }
+    dialog::backdrop { background:rgba(0,0,0,.38); }
+    .dialog-body { padding:18px; }
+    .dialog-head { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:12px; }
+    .dialog-head h2 { margin:0; font-size:20px; }
+    @media (max-width: 640px) {
+      .wrap { width:min(100% - 16px, 860px); padding-top:16px; }
+      .toolbar { grid-template-columns:1fr 1fr; }
+      .toolbar .search { grid-column:1/-1; grid-row:2; }
+      .form-grid { grid-template-columns:1fr; }
+      .form-grid .full { grid-column:auto; }
+      .filters { grid-template-columns:1fr; }
+      .item { align-items:flex-start; }
+      .item-actions { flex-direction:column; }
+      .brand { padding-top:2px; }
+    }
+  </style>
 </head>
-<body class="chartclean"><div class="wrap">
-<div class="apphead">
-  <div class="brand"><div class="f1mark">F1</div><h1>Strategy Manager</h1></div>
-  <div class="tagline">Rennstrategie-Analyse · Schnell. Klar. Fundiert.</div>
-  <div class="savepill">✓ Autospeichern aktiv</div>
-</div>
-
-
-<div class="card">
-<h2>Streckenprofile</h2>
-<p class="small">Aktuelle Strecken- und Reifendaten als Profil speichern, später laden oder für ein anderes Gerät exportieren/importieren.</p>
-<div class="profilegrid">
-  <div><label>Profilname / Strecke</label><input id="profileName" type="text" placeholder="z. B. Monza"></div>
-  <div><label>Gespeichertes Profil</label><select id="profileSelect"><option value="">– Profil auswählen –</option></select></div>
-</div>
-<div class="profileactions">
-  <button type="button" id="profileSaveBtn">PROFIL SPEICHERN / AKTUALISIEREN</button>
-  <button type="button" id="profileLoadBtn">PROFIL LADEN</button>
-  <button type="button" id="profileDeleteBtn">PROFIL LÖSCHEN</button>
-</div>
-<div class="profileactions secondary">
-  <button type="button" id="profileExportBtn">PROFILE EXPORTIEREN</button>
-  <button type="button" id="profileImportBtn">PROFILE IMPORTIEREN</button>
-  <input id="profileImportFile" type="file" accept=".json,application/json" style="display:none">
-</div>
-<div id="profileStatus" class="profilestatus">Noch kein Profil ausgewählt.</div>
-
-<div class="histbox">
-  <div class="histtitle">Entwicklungs-Historie</div>
-  <div class="histmeta">Messstände des aktuell gewählten Streckenprofils speichern und miteinander vergleichen.</div>
-  <div class="histactions">
-    <button type="button" id="historyAddBtn">MESSSTAND SPEICHERN</button>
-    <button type="button" id="historyDeleteBtn">AUSGEWÄHLTEN MESSSTAND LÖSCHEN</button>
-  </div>
-  <div class="histselects">
-    <div><label>Vergleich A</label><select id="historyA"></select></div>
-    <div><label>Vergleich B</label><select id="historyB"></select></div>
-  </div>
-  <div id="historyCompare" class="histcmp"></div>
-  <div id="historyList" class="histlist"></div>
-  <div id="historyStatus" class="small" style="margin-top:8px"></div>
-</div>
-
-
-<div class="dropboxbox">
-  <div class="dropboxhead">
-    <div><b>☁ Dropbox Sync</b><div class="small">Synchronisiert alle Streckenprofile über deine Dropbox.</div></div>
-    <div id="dropboxState" class="cloudpill">Nicht verbunden</div>
-  </div>
-  <div class="profilegrid">
-    <div>
-      <label>Dropbox App Key</label>
-      <input id="dropboxAppKey" type="text" placeholder="App Key aus der Dropbox Developer Console">
+<body>
+  <main class="wrap">
+    <div class="topbar">
+      <div><h1>Meine Links</h1></div>
+      <div class="brand">
+        <div class="version">Version 1.03</div>
+        <div class="maker">Made by BreakCheady</div>
+      </div>
     </div>
-    <div>
-      <label>Redirect-URI</label>
-      <input id="dropboxRedirectUri" type="text" readonly>
+
+    <div class="toolbar">
+      <button class="btn primary" id="randomBtn">🎲 Zufällig</button>
+      <button class="btn ghost" id="addBtn">＋ Hinzufügen</button>
+      <input class="field search" id="searchInput" placeholder="Suchen …" autocomplete="off" />
     </div>
-  </div>
-  <div class="dropboxactions">
-    <button type="button" id="dropboxConnectBtn">MIT DROPBOX VERBINDEN</button>
-    <button type="button" id="dropboxSyncBtn">JETZT SYNCHRONISIEREN</button>
-    <button type="button" id="dropboxDisconnectBtn">TRENNEN</button>
-  </div>
-  <div id="dropboxStatus" class="profilestatus">Für die Anmeldung muss die App über HTTPS oder localhost geöffnet werden.</div>
-</div>
-</div>
 
-<div class="card">
-<h2>Rennsetup</h2>
-<div class="g2">
-<div><label>Renndistanz (Runden)</label><input id="race" type="number" min="5" value="50"></div>
-<div><label>Rennlänge / Gesamtrennzeit</label><input id="raceTime" type="text" inputmode="decimal" value="42:56,738" placeholder="42:56,738"></div><div><label>Boxenstopp-Verlust (Sek.)</label><input id="pit" type="number" min="0" step=".1" value="22"></div>
+    <section class="panel hidden" id="formPanel">
+      <form id="linkForm">
+        <div class="form-grid">
+          <input class="field full" id="urlInput" type="url" placeholder="https://example.com" required />
+          <input class="field full" id="titleInput" placeholder="Titel (optional – wird sonst aus dem Link abgeleitet)" />
+          <input class="field" id="categoryInput" placeholder="Kategorie" />
+          <input class="field" id="tagsInput" placeholder="Tags, durch Komma getrennt" />
+        </div>
+        <div class="form-actions">
+          <button class="btn ghost" type="button" id="cancelBtn">Abbrechen</button>
+          <button class="btn primary" type="submit">Speichern</button>
+        </div>
+      </form>
+    </section>
 
-</div>
+    <section class="panel">
+      <div class="filters">
+        <input class="field" id="filterInput" placeholder="Titel, URL, Kategorie oder Tag filtern …" />
+        <select class="select" id="categoryFilter"><option value="">Alle Kategorien</option></select>
+      </div>
+      <div id="linkList" class="list"></div>
+    </section>
 
-</div>
+    <section class="panel">
+      <div class="sync-row">
+        <input class="field" id="dropboxKey" placeholder="Dropbox App Key" />
+        <button class="btn ghost" id="dropboxConnect">Dropbox verbinden</button>
+        <button class="btn ghost" id="dropboxSync">Synchronisieren</button>
+        <button class="btn danger" id="dropboxDisconnect">Trennen</button>
+      </div>
+      <div class="sync-status" id="syncStatus">Dropbox ist optional. Ohne Verbindung werden alle Daten nur in diesem Browser gespeichert.</div>
+      <p class="small">Für Dropbox muss diese HTML-Datei über HTTPS oder localhost geöffnet werden. In der Dropbox Developer Console dieselbe Adresse als Redirect URI eintragen und „App folder“ als Zugriffstyp verwenden.</p>
+    </section>
+  </main>
 
-<div class="card">
-<h2>Reifendaten</h2><p class="small" style="margin-top:-5px">10-Runden-Kalibrierung: Runde 1, 5 und 10 plus Verschleiß nach Runde 10 eintragen. Die Pace-Kurve wird daraus automatisch abgeleitet.</p>
-<div class="grid3">
-<div class="tyre"><b><span style="color:#ef3340">●</span> Soft</b>
-<label>Abnutzung nach 10 Runden (%)</label><input id="sw" type="number" value="55" step=".1" min=".1">
-<div class="timegrid">
-  <div><label>Runde 1</label><input id="sr1" type="text" inputmode="decimal" value="1:22,800" placeholder="1:23,456"></div>
-  <div><label>Runde 5</label><input id="sr5" type="text" inputmode="decimal" value="1:23,200" placeholder="1:23,456"></div>
-</div>
-<div style="margin-top:7px">
-  <label>Runde 10</label><input id="sr10" type="text" inputmode="decimal" value="1:24,200" placeholder="1:23,456">
-</div>
-<div class="timeres">
-  Gemessene/abgeleitete Ø-Rundenzeit: <b id="savg">–</b><br>
-  Abgeleitete 10-Runden-Stintzeit: <b id="sstint10">–</b>
-</div><label>Verfügbare Sätze</label><div class="setctl"><button type="button" class="setbtn" data-target="ss" data-delta="-1">−</button><input id="ss" type="number" value="2" min="0" step="1" readonly><button type="button" class="setbtn" data-target="ss" data-delta="1">+</button></div>
-
-
-</div>
-<div class="tyre"><b><span style="color:#facc15">●</span> Medium</b>
-<label>Abnutzung nach 10 Runden (%)</label><input id="mw" type="number" value="42" step=".1" min=".1">
-<div class="timegrid">
-  <div><label>Runde 1</label><input id="mr1" type="text" inputmode="decimal" value="1:23,600" placeholder="1:23,456"></div>
-  <div><label>Runde 5</label><input id="mr5" type="text" inputmode="decimal" value="1:24,000" placeholder="1:23,456"></div>
-</div>
-<div style="margin-top:7px">
-  <label>Runde 10</label><input id="mr10" type="text" inputmode="decimal" value="1:25,000" placeholder="1:23,456">
-</div>
-<div class="timeres">
-  Gemessene/abgeleitete Ø-Rundenzeit: <b id="mavg">–</b><br>
-  Abgeleitete 10-Runden-Stintzeit: <b id="mstint10">–</b>
-</div><label>Verfügbare Sätze</label><div class="setctl"><button type="button" class="setbtn" data-target="ms" data-delta="-1">−</button><input id="ms" type="number" value="2" min="0" step="1" readonly><button type="button" class="setbtn" data-target="ms" data-delta="1">+</button></div>
-
-
-</div>
-<div class="tyre"><b><span style="color:#e5e7eb">●</span> Hard</b>
-<label>Abnutzung nach 10 Runden (%)</label><input id="hw" type="number" value="30" step=".1" min=".1">
-<div class="timegrid">
-  <div><label>Runde 1</label><input id="hr1" type="text" inputmode="decimal" value="1:24,400" placeholder="1:23,456"></div>
-  <div><label>Runde 5</label><input id="hr5" type="text" inputmode="decimal" value="1:24,800" placeholder="1:23,456"></div>
-</div>
-<div style="margin-top:7px">
-  <label>Runde 10</label><input id="hr10" type="text" inputmode="decimal" value="1:25,800" placeholder="1:23,456">
-</div>
-<div class="timeres">
-  Gemessene/abgeleitete Ø-Rundenzeit: <b id="havg">–</b><br>
-  Abgeleitete 10-Runden-Stintzeit: <b id="hstint10">–</b>
-</div><label>Verfügbare Sätze</label><div class="setctl"><button type="button" class="setbtn" data-target="hs" data-delta="-1">−</button><input id="hs" type="number" value="2" min="0" step="1" readonly><button type="button" class="setbtn" data-target="hs" data-delta="1">+</button></div>
-
-
-</div>
-</div>
-<button onclick="calc()">STRATEGIE BERECHNEN</button>
-</div>
-
-<div class="card">
-<h2>Reifenlebensdauer</h2>
-<div class="chartwrap"><canvas id="chart"></canvas><div id="chartTip" class="charttip" role="status" aria-live="polite"></div></div>
-<p class="small">Die horizontale Achse zeigt ausschließlich die Reifenrunden. Die Verschleißkurven werden aus deiner 10-Runden-Messung berechnet.</p>
-</div>
-
-
-
-<div class="card">
-
-<h2>Strategie A / B / C</h2>
-<div class="commandcenter" id="commandCenter">
-  <div class="commandmain">
-    <div class="commandeyebrow">Empfohlene Strategie</div>
-    <div class="commandtitle" id="commandTitle">Strategie wird berechnet …</div>
-    <div class="commandtimeline" id="commandTimeline"></div>
-  </div>
-  <div class="commandstats">
-    <div class="commandmetric"><span class="small">Gesamtzeit</span><b id="commandTime">–</b></div>
-    <div class="commandmetric"><span class="small">Max. Verschleiß</span><b id="commandWear">–</b></div>
-    <div class="commandmetric"><span class="small">Stopps</span><b id="commandStops">–</b></div>
-    <div class="commandmetric"><span class="small">Pace Loss</span><b id="commandPace">–</b></div>
-  </div>
-</div>
-
-<button type="button" class="strategy-detail-toggle" id="strategyDetailsToggle" onclick="toggleStrategyDetails()">DETAILANALYSE ANZEIGEN</button>
-<div class="strategy-status" id="strategyStatus"></div>
-
-
-<div id="strategyCards" class="strats strategy-details-hidden"></div>
-<p class="small">A = schnellste sinnvolle Strategie, B = nächstschnelle Alternative, C = reifenschonendere Alternative. Die Strategie berücksichtigt Reifenverschleiß, progressiven Pace-Abbau, Boxenstopp-Verlust und die verfügbaren Reifensätze.</p>
-</div>
-
-
-<div class="card">
-  <div class="racecardbar">
-    <div><h2 style="margin:0;border:0;padding:0">Race Card</h2><div class="small">Kompakte Rennansicht der aktuell berechneten Strategie.</div></div>
-    <button type="button" class="racecardopen" id="raceCardOpen" onclick="openRaceCard()">RACE CARD ÖFFNEN</button>
-  </div>
-</div>
-
-<div class="card" id="strategyLabCard">
-<div class="section-toggle" id="labToggle" onclick="toggleCollapsible('labToggle','labBody')"><h2 style="margin:0;flex:1">Strategie-Labor</h2><span class="chev">⌄</span></div><div class="collapsible-body" id="labBody">
-<div class="small" style="margin-bottom:10px">Eine berechnete Strategie wählen und Stopprunden oder Reifenfolge verändern. Die automatische Strategie-Engine bleibt unverändert.</div>
-<div class="labgrid">
-<div>
-<div class="labcontrols">
-<div><label>Ausgangsstrategie</label><select id="labBase"><option value="0">Strategie A</option><option value="1">Strategie B</option><option value="2">Strategie C</option></select></div>
-<div><label>Reifen 1</label><select id="labTyre1"><option value="0">Soft</option><option value="1">Medium</option><option value="2">Hard</option></select></div>
-<div><label>Reifen 2</label><select id="labTyre2"><option value="0">Soft</option><option value="1">Medium</option><option value="2">Hard</option></select></div>
-<div id="labTyre3Wrap"><label>Reifen 3</label><select id="labTyre3"><option value="0">Soft</option><option value="1">Medium</option><option value="2">Hard</option></select></div>
-</div>
-<div class="labrow"><div><label>Stopp 1</label><input id="labPit1" type="number" min="1" step="1"></div><button type="button" id="labPit1Minus">−</button><button type="button" id="labPit1Plus">+</button></div>
-<div class="labrow" id="labPit2Row"><div><label>Stopp 2</label><input id="labPit2" type="number" min="2" step="1"></div><button type="button" id="labPit2Minus">−</button><button type="button" id="labPit2Plus">+</button></div>
-</div>
-<div class="labresult"><div class="small">Labor-Ergebnis</div><div class="labheadline" id="labTime">–</div><div id="labDelta" class="labdelta labneutral">–</div><div id="labStatus" class="small" style="margin-top:6px">Noch keine Strategie geladen.</div><div class="labstints" id="labStints"></div></div>
-</div>
-</div>
-
-<div class="card" style="padding:10px 14px;text-align:center">
-  <div class="small" style="font-weight:800;letter-spacing:.45px">F1 STRATEGY MANAGER · VERSION 5.9 (BETA)</div>
-</div>
-
-
-</div>
-</div>
+  <dialog id="editDialog">
+    <div class="dialog-body">
+      <div class="dialog-head"><h2>Eintrag bearbeiten</h2><button class="icon-btn" id="closeDialog">✕</button></div>
+      <form id="editForm">
+        <input type="hidden" id="editId" />
+        <div class="form-grid">
+          <input class="field full" id="editUrl" type="url" required />
+          <input class="field full" id="editTitle" placeholder="Titel" />
+          <input class="field" id="editCategory" placeholder="Kategorie" />
+          <input class="field" id="editTags" placeholder="Tags, durch Komma getrennt" />
+        </div>
+        <div class="form-actions"><button class="btn primary" type="submit">Änderungen speichern</button></div>
+      </form>
+    </div>
+  </dialog>
 
 <script>
+(() => {
+  const VERSION = '1.03';
+  const STORE = 'linkwebapp.v103.links';
+  const DBX_KEY = 'linkwebapp.dropbox.appkey';
+  const DBX_TOKEN = 'linkwebapp.dropbox.token';
+  const DBX_REFRESH = 'linkwebapp.dropbox.refresh';
+  const DBX_VERIFIER = 'linkwebapp.dropbox.verifier';
+  const DBX_FILE = '/links.json';
 
-function toggleCollapsible(toggleId,bodyId){
- const t=$(toggleId),b=$(bodyId); if(!t||!b)return;
- const isHidden=b.style.display==='none';
- b.style.display=isHidden?'block':'none';
- t.classList.toggle('collapsed',!isHidden);
-}
-function toggleStrategyDetails(){
- const grid=document.querySelector('.strats');
- const btn=$('strategyDetailsToggle');
- if(!grid||!btn)return;
- const hidden=grid.classList.toggle('strategy-details-hidden');
- btn.textContent=hidden?'DETAILANALYSE ANZEIGEN':'DETAILANALYSE AUSBLENDEN';
-}
-function compoundLabel(name){
- return name==='Soft'?'🔴 Soft':name==='Medium'?'🟡 Medium':name==='Hard'?'⚪ Hard':name;
-}
-function updateTrackSubtitle(){
- const p=(($('profileSelect')&&$('profileSelect').value)||($('profileName')&&$('profileName').value)||'').trim();
- const el=$('trackSubtitle'); if(!el)return;
- el.textContent=(p?p+' · ':'')+'Race Strategy';
-}
-function renderStrategyStatus(){
- const el=$('strategyStatus'); if(!el)return;
- const x=(typeof LAB_STRATEGIES!=='undefined'&&LAB_STRATEGIES.length)?LAB_STRATEGIES[0]:null;
- if(!x){el.innerHTML='';return}
- const R=Math.max(1,Math.round(N('race'))),keys=['s','m','h'];
- let start=1,maxWear=0;
- x.seq.forEach((c,i)=>{
-   const end=i<x.pits.length?x.pits[i]:R,len=end-start+1;
-   maxWear=Math.max(maxWear,wearAt(tyre(keys[c]),len));
-   start=end+1;
- });
- const compounds=new Set(x.seq).size;
- const enough=(typeof enoughSets==='function')?enoughSets(x.seq):true;
- el.innerHTML=
-  '<span class="statuschip ok">✓ '+x.stops+'-STOPP</span>'+
-  '<span class="statuschip '+(enough?'ok':'')+'">'+(enough?'✓':'!')+' REIFENSÄTZE</span>'+
-  '<span class="statuschip '+(maxWear<=100?'ok':'')+'">MAX '+maxWear.toFixed(1)+' %</span>'+
-  '<span class="statuschip '+(compounds>=2?'ok':'')+'">'+compounds+' COMPOUNDS</span>';
-}
+  const $ = id => document.getElementById(id);
+  let links = loadLinks();
 
-function tyreDisplayName(name){return name==='Soft'?'🔴 Soft':name==='Medium'?'🟡 Medium':name==='Hard'?'⚪ Hard':name}
-
-const $=id=>document.getElementById(id),N=id=>parseFloat($(id).value)||0;
-
-const SAVE_KEY='f1_strategy_engineer';
-const SAVE_IDS=['race','raceTime','pit','sw','mw','hw','sr1','sr5','sr10','mr1','mr5','mr10','hr1','hr5','hr10','ss','ms','hs'];
-const PROFILE_KEY='f1_strategy_profiles_v1';
-const PROFILE_TOMBSTONE_KEY='f1_strategy_profile_tombstones_v1';
-const DROPBOX_CFG_KEY='f1_strategy_dropbox_cfg_v1';
-const DROPBOX_TOKEN_KEY='f1_strategy_dropbox_token_v1';
-const DROPBOX_FILE='/f1-strategy-profiles.json';
-
-function b64url(bytes){
- let s=''; bytes.forEach(b=>s+=String.fromCharCode(b));
- return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-async function sha256(text){
- return new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)));
-}
-function randomVerifier(){
- const bytes=new Uint8Array(48);crypto.getRandomValues(bytes);return b64url(bytes);
-}
-function getDropboxCfg(){
- try{return JSON.parse(localStorage.getItem(DROPBOX_CFG_KEY)||'{}')}catch(e){return {}}
-}
-function setDropboxCfg(cfg){try{localStorage.setItem(DROPBOX_CFG_KEY,JSON.stringify(cfg))}catch(e){}}
-function getDropboxToken(){
- try{return JSON.parse(localStorage.getItem(DROPBOX_TOKEN_KEY)||'null')}catch(e){return null}
-}
-function setDropboxToken(t){
- try{
-  if(t)localStorage.setItem(DROPBOX_TOKEN_KEY,JSON.stringify(t));
-  else localStorage.removeItem(DROPBOX_TOKEN_KEY);
- }catch(e){}
-}
-function currentRedirectUri(){
- if(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1'){
-  return location.origin+location.pathname;
- }
- return '';
-}
-function setDropboxStatus(text,type=''){
- const el=$('dropboxStatus');if(!el)return;
- el.textContent=text;el.className='profilestatus'+(type?' '+type:'');
-}
-function updateDropboxState(){
- const token=getDropboxToken(),pill=$('dropboxState');
- if(!pill)return;
- if(token&&token.access_token){
-  pill.textContent='Verbunden';pill.className='cloudpill on';
- }else{
-  pill.textContent='Nicht verbunden';pill.className='cloudpill';
- }
-}
-function saveDropboxConfigFromUI(){
- const cfg=getDropboxCfg();
- cfg.appKey=($('dropboxAppKey').value||'').trim();
- cfg.redirectUri=currentRedirectUri();
- setDropboxCfg(cfg);
-}
-async function connectDropbox(){
- saveDropboxConfigFromUI();
- const cfg=getDropboxCfg();
- if(!cfg.appKey){setDropboxStatus('Bitte zuerst den Dropbox App Key eintragen.','warn');return}
- if(!currentRedirectUri()){
-  setDropboxStatus('Dropbox OAuth benötigt HTTPS oder localhost. Öffne diese HTML-Datei über einen kleinen Webserver bzw. eine HTTPS-Adresse.','warn');return;
- }
- if(!window.crypto||!crypto.subtle){
-  setDropboxStatus('Dieser Browser stellt Web Crypto für PKCE nicht bereit.','warn');return;
- }
- const verifier=randomVerifier();
- const challenge=b64url(await sha256(verifier));
- sessionStorage.setItem('dbx_pkce_verifier',verifier);
- const state=b64url(crypto.getRandomValues(new Uint8Array(18)));
- sessionStorage.setItem('dbx_oauth_state',state);
- const params=new URLSearchParams({
-  client_id:cfg.appKey,
-  response_type:'code',
-  code_challenge:challenge,
-  code_challenge_method:'S256',
-  token_access_type:'offline',
-  redirect_uri:cfg.redirectUri,
-  state
- });
- location.href='https://www.dropbox.com/oauth2/authorize?'+params.toString();
-}
-async function handleDropboxCallback(){
- const q=new URLSearchParams(location.search);
- const code=q.get('code');
- if(!code)return;
- const returnedState=q.get('state');
- const expectedState=sessionStorage.getItem('dbx_oauth_state');
- if(!expectedState||returnedState!==expectedState){
-  setDropboxStatus('Dropbox-Anmeldung abgebrochen: ungültiger OAuth-Status.','warn');return;
- }
- const verifier=sessionStorage.getItem('dbx_pkce_verifier');
- const cfg=getDropboxCfg();
- if(!verifier||!cfg.appKey||!cfg.redirectUri){
-  setDropboxStatus('Dropbox-Anmeldung konnte nicht abgeschlossen werden.','warn');return;
- }
- try{
-  const body=new URLSearchParams({
-   code,
-   grant_type:'authorization_code',
-   client_id:cfg.appKey,
-   redirect_uri:cfg.redirectUri,
-   code_verifier:verifier
-  });
-  const r=await fetch('https://api.dropboxapi.com/oauth2/token',{
-   method:'POST',
-   headers:{'Content-Type':'application/x-www-form-urlencoded'},
-   body
-  });
-  if(!r.ok)throw new Error('Token '+r.status);
-  const t=await r.json();
-  t.saved_at=Date.now();
-  setDropboxToken(t);
-  sessionStorage.removeItem('dbx_pkce_verifier');
-  sessionStorage.removeItem('dbx_oauth_state');
-  history.replaceState({},document.title,location.pathname);
-  updateDropboxState();
-  setDropboxStatus('Dropbox verbunden. Profile können jetzt synchronisiert werden.','ok');
-  await syncDropbox();
- }catch(e){
-  setDropboxStatus('Dropbox-Anmeldung fehlgeschlagen. Prüfe App Key und Redirect-URI.','warn');
- }
-}
-async function refreshDropboxTokenIfNeeded(){
- let t=getDropboxToken();
- if(!t)return null;
- const expiresMs=(t.expires_in||14400)*1000;
- if(t.saved_at && Date.now()<t.saved_at+expiresMs-120000)return t.access_token;
- if(!t.refresh_token)return t.access_token;
- const cfg=getDropboxCfg();
- const body=new URLSearchParams({
-  grant_type:'refresh_token',
-  refresh_token:t.refresh_token,
-  client_id:cfg.appKey
- });
- const r=await fetch('https://api.dropboxapi.com/oauth2/token',{
-  method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body
- });
- if(!r.ok)throw new Error('refresh');
- const fresh=await r.json();
- t={...t,...fresh,saved_at:Date.now()};
- setDropboxToken(t);
- return t.access_token;
-}
-async function dropboxDownloadProfiles(token){
- const r=await fetch('https://content.dropboxapi.com/2/files/download',{
-  method:'POST',
-  headers:{
-   'Authorization':'Bearer '+token,
-   'Dropbox-API-Arg':JSON.stringify({path:DROPBOX_FILE})
+  function now() { return new Date().toISOString(); }
+  function uid() { return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2); }
+  function loadLinks() { try { return JSON.parse(localStorage.getItem(STORE) || '[]'); } catch { return []; } }
+  function saveLinks() { localStorage.setItem(STORE, JSON.stringify(links)); render(); }
+  function normUrl(v) { let x = v.trim(); if (!/^https?:\/\//i.test(x)) x = 'https://' + x; return x; }
+  function deriveTitle(url) {
+    try {
+      const u = new URL(url);
+      const host = u.hostname.replace(/^www\./, '');
+      const parts = decodeURIComponent(u.pathname).split('/').filter(Boolean);
+      if (!parts.length) return host;
+      const last = parts.at(-1).replace(/\.[a-z0-9]{1,6}$/i,'').replace(/[-_]+/g,' ').trim();
+      return last && last.length > 1 ? last.replace(/\b\w/g, c => c.toUpperCase()) : host;
+    } catch { return url; }
   }
- });
- if(r.status===409)return null;
- if(!r.ok)throw new Error('download '+r.status);
- return await r.json();
-}
-async function dropboxUploadProfiles(token,payload){
- const r=await fetch('https://content.dropboxapi.com/2/files/upload',{
-  method:'POST',
-  headers:{
-   'Authorization':'Bearer '+token,
-   'Content-Type':'application/octet-stream',
-   'Dropbox-API-Arg':JSON.stringify({path:DROPBOX_FILE,mode:'overwrite',autorename:false,mute:true})
-  },
-  body:JSON.stringify(payload,null,2)
- });
- if(!r.ok)throw new Error('upload '+r.status);
- return await r.json();
-}
-function mergeProfileState(localProfiles,localTombstones,remoteProfiles,remoteTombstones){
- const names=new Set([...Object.keys(localProfiles||{}),...Object.keys(localTombstones||{}),...Object.keys(remoteProfiles||{}),...Object.keys(remoteTombstones||{})]);
- const profiles={},tombstones={};
- names.forEach(name=>{
-  const lp=localProfiles&&localProfiles[name],rp=remoteProfiles&&remoteProfiles[name];
-  const ld=localTombstones&&localTombstones[name],rd=remoteTombstones&&remoteTombstones[name];
-  const lpT=Date.parse((lp&&lp.updatedAt)||0)||0,rpT=Date.parse((rp&&rp.updatedAt)||0)||0;
-  const ldT=Date.parse((ld&&ld.deletedAt)||0)||0,rdT=Date.parse((rd&&rd.deletedAt)||0)||0;
-  const newest=Math.max(lpT,rpT,ldT,rdT);
-  if(newest===ldT&&ldT>0)tombstones[name]={deletedAt:ld.deletedAt};
-  else if(newest===rdT&&rdT>0)tombstones[name]={deletedAt:rd.deletedAt};
-  else if(newest===rpT&&rp)profiles[name]=rp;
-  else if(lp)profiles[name]=lp;
- });
- return {profiles,tombstones};
-}
-async function syncDropbox(){
- const tokenObj=getDropboxToken();
- if(!tokenObj||!tokenObj.access_token){setDropboxStatus('Dropbox ist nicht verbunden.','warn');return}
- setDropboxStatus('Synchronisierung läuft …');
- try{
-  const token=await refreshDropboxTokenIfNeeded();
-  const remote=await dropboxDownloadProfiles(token);
-  const remoteProfiles=remote&&remote.profiles&&typeof remote.profiles==='object'?remote.profiles:{};
-  const remoteTombstones=remote&&remote.tombstones&&typeof remote.tombstones==='object'?remote.tombstones:{};
-  const merged=mergeProfileState(getProfiles(),getProfileTombstones(),remoteProfiles,remoteTombstones);
-  setProfiles(merged.profiles);setProfileTombstones(merged.tombstones);cleanupOldTombstones();
-  const hm=mergeHistoryState(getProfileHistory(),getDeletedHistory(),(remote&&remote.history)||{},(remote&&remote.historyDeleted)||{});
-  setProfileHistory(hm.history);setDeletedHistory(hm.deleted);
-  refreshProfileSelect($('profileSelect').value);renderHistory();
-  const payload={
-   app:'F1 Strategy Manager',
-   schemaVersion:3,
-   syncedAt:new Date().toISOString(),
-   profiles:getProfiles(),
-   tombstones:getProfileTombstones(),
-   history:getProfileHistory(),
-   historyDeleted:getDeletedHistory()
-  };
-  await dropboxUploadProfiles(token,payload);
-  const cfg=getDropboxCfg();cfg.lastSync=new Date().toISOString();setDropboxCfg(cfg);
-  setDropboxStatus('Synchronisiert · '+new Date(cfg.lastSync).toLocaleString('de-DE'),'ok');
-  updateDropboxState();
- }catch(e){
-  setDropboxStatus('Dropbox-Synchronisierung fehlgeschlagen. Verbindung oder Berechtigungen prüfen.','warn');
- }
-}
-function disconnectDropbox(){
- if(!confirm('Dropbox-Verbindung auf diesem Gerät trennen? Deine lokalen Streckenprofile bleiben erhalten.'))return;
- setDropboxToken(null);updateDropboxState();
- setDropboxStatus('Dropbox wurde auf diesem Gerät getrennt.');
-}
-async function autoSyncDropbox(){
- if(getDropboxToken()){
-  try{await syncDropbox()}catch(e){}
- }
-}
-
-
-function getProfileTombstones(){
- try{const raw=localStorage.getItem(PROFILE_TOMBSTONE_KEY);const d=raw?JSON.parse(raw):{};return d&&typeof d==='object'?d:{}}catch(e){return {}}
-}
-function setProfileTombstones(t){try{localStorage.setItem(PROFILE_TOMBSTONE_KEY,JSON.stringify(t||{}))}catch(e){}}
-function setProfileTombstone(name,deletedAt){
- const t=getProfileTombstones();t[name]={deletedAt:deletedAt||new Date().toISOString()};setProfileTombstones(t);
-}
-function clearProfileTombstone(name){
- const t=getProfileTombstones();if(Object.prototype.hasOwnProperty.call(t,name)){delete t[name];setProfileTombstones(t)}
-}
-function cleanupOldTombstones(days=180){
- const t=getProfileTombstones(),cutoff=Date.now()-days*86400000;let changed=false;
- Object.keys(t).forEach(name=>{const ts=Date.parse((t[name]&&t[name].deletedAt)||0)||0;if(ts&&ts<cutoff){delete t[name];changed=true}});
- if(changed)setProfileTombstones(t);
-}
-function getProfiles(){
- try{const raw=localStorage.getItem(PROFILE_KEY);return raw?JSON.parse(raw):{}}catch(e){return {}}
-}
-function setProfiles(p){try{localStorage.setItem(PROFILE_KEY,JSON.stringify(p))}catch(e){}}
-function profilePayload(){
- const values={}; SAVE_IDS.forEach(id=>{const el=$(id);if(el)values[id]=el.value});
- return {version:1,updatedAt:new Date().toISOString(),values};
-}
-function applyProfile(p){
- if(!p||!p.values)return;
- SAVE_IDS.forEach(id=>{const el=$(id);if(el&&Object.prototype.hasOwnProperty.call(p.values,id))el.value=p.values[id]});
- saveInputs();updateAllTyreTimes();calc();
-}
-function setProfileStatus(text,type=''){
- const el=$('profileStatus');if(!el)return;
- el.textContent=text;el.className='profilestatus'+(type?' '+type:'');
-}
-function refreshProfileSelect(selected=''){
- const sel=$('profileSelect');if(!sel)return;
- const p=getProfiles();sel.innerHTML='<option value="">– Profil auswählen –</option>';
- Object.keys(p).sort((a,b)=>a.localeCompare(b,'de')).forEach(name=>{
-  const o=document.createElement('option');o.value=name;o.textContent=name;sel.appendChild(o);
- });
- if(selected&&p[selected])sel.value=selected;
-}
-function saveCurrentProfile(){
- const name=($('profileName').value||'').trim();
- if(!name){setProfileStatus('Bitte einen Profilnamen bzw. eine Strecke eingeben.','warn');return}
- const p=getProfiles(),exists=!!p[name];
- if(exists&&!confirm('Das Profil „'+name+'“ existiert bereits. Wirklich aktualisieren?'))return;
- p[name]=profilePayload();clearProfileTombstone(name);setProfiles(p);refreshProfileSelect(name);
- setProfileStatus('Profil „'+name+'“ wurde '+(exists?'aktualisiert':'gespeichert')+'.','ok');renderHistory();autoSyncDropbox();
-}
-function loadSelectedProfile(){
- const name=$('profileSelect').value;if(!name){setProfileStatus('Bitte ein Profil auswählen.','warn');return}
- const p=getProfiles()[name];if(!p){setProfileStatus('Profil nicht gefunden.','warn');refreshProfileSelect();return}
- $('profileName').value=name;applyProfile(p);
- const when=p.updatedAt?new Date(p.updatedAt).toLocaleString('de-DE'):'unbekannt';
- setProfileStatus('Profil „'+name+'“ geladen · zuletzt geändert '+when+'.','ok');renderHistory();
-}
-function deleteSelectedProfile(){
- const name=$('profileSelect').value;if(!name){setProfileStatus('Bitte ein Profil auswählen.','warn');return}
- if(!confirm('Profil „'+name+'“ wirklich löschen?'))return;
- const p=getProfiles();delete p[name];setProfiles(p);setProfileTombstone(name,new Date().toISOString());refreshProfileSelect();
- if($('profileName').value===name)$('profileName').value='';
- setProfileStatus('Profil „'+name+'“ wurde gelöscht.','ok');autoSyncDropbox();
-}
-function exportProfiles(){
- const p=getProfiles();
- const payload={app:'F1 Strategy Manager',schemaVersion:3,exportedAt:new Date().toISOString(),profiles:p,tombstones:getProfileTombstones(),history:getProfileHistory(),historyDeleted:getDeletedHistory()};
- const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
- const url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download='f1-strategy-profiles-'+new Date().toISOString().slice(0,10)+'.json';
- document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
- setProfileStatus(Object.keys(p).length+' Profil(e) exportiert.','ok');
-}
-function importProfilesFromFile(file){
- const r=new FileReader();
- r.onload=()=>{
-  try{
-   const parsed=JSON.parse(r.result);
-   const incoming=parsed&&parsed.profiles&&typeof parsed.profiles==='object'?parsed.profiles:null;
-   if(!incoming)throw new Error();
-   const incomingTombstones=parsed&&parsed.tombstones&&typeof parsed.tombstones==='object'?parsed.tombstones:{};
-   const hm=mergeHistoryState(getProfileHistory(),getDeletedHistory(),parsed.history||{},parsed.historyDeleted||{});
-   setProfileHistory(hm.history);setDeletedHistory(hm.deleted);
-
-   const cur=getProfiles(),tombs=getProfileTombstones();let added=0,updated=0,skipped=0,deleted=0;
-   Object.entries(incomingTombstones).forEach(([name,mark])=>{
-    const dt=Date.parse((mark&&mark.deletedAt)||0)||0,pt=Date.parse((cur[name]&&cur[name].updatedAt)||0)||0,ldt=Date.parse((tombs[name]&&tombs[name].deletedAt)||0)||0;
-    if(dt>Math.max(pt,ldt)){delete cur[name];tombs[name]={deletedAt:mark.deletedAt};deleted++;}
-   });
-   Object.entries(incoming).forEach(([name,p])=>{
-    if(!p||!p.values)return;
-    const oldT=Date.parse((cur[name]&&cur[name].updatedAt)||0)||0,newT=Date.parse(p.updatedAt||0)||0,delT=Date.parse((tombs[name]&&tombs[name].deletedAt)||0)||0;
-    if(newT<=delT){skipped++;return}
-    if(!cur[name]){cur[name]=p;delete tombs[name];added++;return}
-    if(newT>oldT){cur[name]=p;delete tombs[name];updated++}else skipped++;
-   });
-   setProfiles(cur);setProfileTombstones(tombs);cleanupOldTombstones();refreshProfileSelect();
-   setProfileStatus('Import: '+added+' neu, '+updated+' aktualisiert, '+deleted+' gelöscht, '+skipped+' unverändert.','ok');autoSyncDropbox();
-  }catch(e){setProfileStatus('Import fehlgeschlagen: ungültige Profildatei.','warn')}
- };
- r.readAsText(file);
-}
-
-
-function collectInputs(){
- const data={};
- SAVE_IDS.forEach(id=>{
-  const el=$(id);
-  if(el)data[id]=el.value;
- });
- return data;
-}
-function saveInputs(){
- const raw=JSON.stringify(collectInputs());
- try{localStorage.setItem(SAVE_KEY,raw);}catch(e){}
- try{window.name=SAVE_KEY+'|'+raw;}catch(e){}
-}
-function loadInputs(){
- let raw=null;
- try{raw=localStorage.getItem(SAVE_KEY);}catch(e){}
- if(!raw){
-  try{
-   const prefix=SAVE_KEY+'|';
-   if(window.name && window.name.startsWith(prefix))raw=window.name.slice(prefix.length);
-  }catch(e){}
- }
- if(!raw)return;
- try{
-  const data=JSON.parse(raw);
-
-  // Migration from V45: fastest -> R1, slowest -> R10, R5 as midpoint.
-  ['s','m','h'].forEach(p=>{
-   if(data[p+'r1']==null && data[p+'fast']!=null)data[p+'r1']=data[p+'fast'];
-   if(data[p+'r10']==null && data[p+'slow']!=null)data[p+'r10']=data[p+'slow'];
-   if(data[p+'r5']==null && data[p+'fast']!=null && data[p+'slow']!=null){
-    const a=parseTime(data[p+'fast']),b=parseTime(data[p+'slow']);
-    if(a!=null&&b!=null)data[p+'r5']=formatRaceTime(a+(b-a)*0.36);
-   }
-  });
-
-  SAVE_IDS.forEach(id=>{
-   const el=$(id);
-   if(el && Object.prototype.hasOwnProperty.call(data,id))el.value=data[id];
-  });
- }catch(e){}
-}
-
-function parseTime(v){
-  if(!v)return null;
-  v=String(v).trim().replace('.',',');
-  const m=v.match(/^(\d+):([0-5]?\d)(?:,(\d{1,3}))?$/);
-  if(!m)return null;
-  const min=parseInt(m[1],10), sec=parseInt(m[2],10);
-  const ms=parseInt((m[3]||'0').padEnd(3,'0').slice(0,3),10);
-  return min*60000+sec*1000+ms;
-}
-function parseLapTime(v){return parseTime(v);}
-function formatRaceTime(ms){
-  if(ms==null||!isFinite(ms))return '–';
-  ms=Math.round(ms);
-  const min=Math.floor(ms/60000);
-  const sec=Math.floor((ms%60000)/1000);
-  const milli=ms%1000;
-  return min+':'+String(sec).padStart(2,'0')+','+String(milli).padStart(3,'0');
-}
-function updateTyreTimes(p){
-  const r1=parseLapTime($(p+'r1').value);
-  const r5=parseLapTime($(p+'r5').value);
-  const r10=parseLapTime($(p+'r10').value);
-  if(r1==null||r5==null||r10==null){
-    $(p+'avg').textContent='Ungültiges Format';
-    $(p+'stint10').textContent='–';
-    return;
+  function favicon(url) {
+    try { const u = new URL(url); return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(u.hostname)}&sz=64`; }
+    catch { return ''; }
   }
-  const t={r1,r5,r10};
-  let total=0;
-  for(let lap=1;lap<=10;lap++)total+=lapTimeAtStintLap(t,lap);
-  $(p+'avg').textContent=formatRaceTime(total/10);
-  $(p+'stint10').textContent=formatRaceTime(total);
-}
-function updateAllTyreTimes(){['s','m','h'].forEach(updateTyreTimes);}
-function chgSet(id,delta){
- const el=$(id);
- if(!el)return;
- el.value=Math.max(0,(parseInt(el.value,10)||0)+delta);
- saveInputs();
- calc();
-}
-const raceTimeInput=$('raceTime');if(raceTimeInput)raceTimeInput.addEventListener('input',calc);
-['sr1','sr5','sr10','mr1','mr5','mr10','hr1','hr5','hr10'].forEach(id=>{
- const el=$(id);
- if(el)el.addEventListener('input',updateAllTyreTimes);
-});
+  function esc(s='') { return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function parseTags(v) { return [...new Set(v.split(',').map(x=>x.trim()).filter(Boolean))]; }
+  function activeLinks() { return links.filter(x => !x.deletedAt); }
 
-SAVE_IDS.forEach(id=>{
- const el=$(id);
- if(!el)return;
- el.addEventListener('input',saveInputs);
- el.addEventListener('change',saveInputs);
-});
+  function render() {
+    const q = (($('searchInput').value || '') + ' ' + ($('filterInput').value || '')).trim().toLowerCase();
+    const cat = $('categoryFilter').value;
+    const cats = [...new Set(activeLinks().map(x=>x.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de'));
+    const prev = $('categoryFilter').value;
+    $('categoryFilter').innerHTML = '<option value="">Alle Kategorien</option>' + cats.map(c=>`<option ${c===prev?'selected':''}>${esc(c)}</option>`).join('');
 
+    const visible = activeLinks().filter(x => {
+      const hay = [x.title,x.url,x.category,...(x.tags||[])].join(' ').toLowerCase();
+      return (!q || hay.includes(q)) && (!cat || x.category === cat);
+    }).sort((a,b)=> (b.updatedAt||'').localeCompare(a.updatedAt||''));
 
-
-const cfg0=getDropboxCfg();
-if($('dropboxAppKey'))$('dropboxAppKey').value=cfg0.appKey||'';
-if($('dropboxRedirectUri'))$('dropboxRedirectUri').value=currentRedirectUri()||'Nur über HTTPS / localhost verfügbar';
-if(cfg0.lastSync)setDropboxStatus('Zuletzt synchronisiert · '+new Date(cfg0.lastSync).toLocaleString('de-DE'),getDropboxToken()?'ok':'');
-updateDropboxState();
-
-const dropboxConnectBtn=$('dropboxConnectBtn');if(dropboxConnectBtn)dropboxConnectBtn.addEventListener('click',connectDropbox);
-const dropboxSyncBtn=$('dropboxSyncBtn');if(dropboxSyncBtn)dropboxSyncBtn.addEventListener('click',syncDropbox);
-const dropboxDisconnectBtn=$('dropboxDisconnectBtn');if(dropboxDisconnectBtn)dropboxDisconnectBtn.addEventListener('click',disconnectDropbox);
-const dropboxAppKey=$('dropboxAppKey');if(dropboxAppKey)dropboxAppKey.addEventListener('change',saveDropboxConfigFromUI);
-
-handleDropboxCallback();
-
-const profileSaveBtn=$('profileSaveBtn');if(profileSaveBtn)profileSaveBtn.addEventListener('click',saveCurrentProfile);
-const profileLoadBtn=$('profileLoadBtn');if(profileLoadBtn)profileLoadBtn.addEventListener('click',loadSelectedProfile);
-const profileDeleteBtn=$('profileDeleteBtn');if(profileDeleteBtn)profileDeleteBtn.addEventListener('click',deleteSelectedProfile);
-const profileExportBtn=$('profileExportBtn');if(profileExportBtn)profileExportBtn.addEventListener('click',exportProfiles);
-const profileImportBtn=$('profileImportBtn');if(profileImportBtn)profileImportBtn.addEventListener('click',()=>$('profileImportFile').click());
-const profileImportFile=$('profileImportFile');
-if(profileImportFile)profileImportFile.addEventListener('change',()=>{
- const f=profileImportFile.files&&profileImportFile.files[0];if(f)importProfilesFromFile(f);profileImportFile.value='';
-});
-const profileSelect=$('profileSelect');
-if(profileSelect)profileSelect.addEventListener('change',()=>{
- const name=profileSelect.value;if(name){$('profileName').value=name;const p=getProfiles()[name];
- const when=p&&p.updatedAt?new Date(p.updatedAt).toLocaleString('de-DE'):'unbekannt';
- setProfileStatus('Profil „'+name+'“ ausgewählt · zuletzt geändert '+when+'.');
- }else setProfileStatus('Noch kein Profil ausgewählt.');
-});
-refreshProfileSelect();
-
-document.querySelectorAll('.setbtn').forEach(btn=>{
- btn.addEventListener('click',function(){
-  chgSet(this.dataset.target,parseInt(this.dataset.delta,10)||0);
- });
-});
-function tyre(p){
- const r1=parseLapTime($(p+'r1').value);
- const r5=parseLapTime($(p+'r5').value);
- const r10=parseLapTime($(p+'r10').value);
- return{
-  name:p==='s'?'Soft':p==='m'?'Medium':'Hard',
-  wear:N(p+'w')/10,
-  sets:Math.max(0,Math.floor(N(p+'s'))),
-  r1,r5,r10,
-  fast:r1,
-  slow:r10,
-  avg:(r1!=null&&r5!=null&&r10!=null)?(r1+r5+r10)/3:null
- };
-}
-function wearAt(t,l){return t.wear*l}
-function lapTimeAtStintLap(t,lap){
- if(t.r1==null||t.r5==null||t.r10==null)return null;
- lap=Math.max(1,lap);
-
- // Direkte Kalibrierung aus dem 10-Runden-Test:
- // R1 -> R5 und R5 -> R10 bilden die gemessene Deg-Kurve.
- if(lap<=5){
-  const u=(lap-1)/4;
-  return t.r1+(t.r5-t.r1)*Math.pow(u,1.15);
- }
- if(lap<=10){
-  const u=(lap-5)/5;
-  return t.r5+(t.r10-t.r5)*Math.pow(u,1.25);
- }
-
- // Nach Runde 10 wird nur der tatsächlich gemessene späte Pace-Abbau
- // fortgeschrieben. Keine festen Soft/Medium/Hard-Peakfenster mehr.
- const lateGap=t.r10-t.r5;
- const perLap=lateGap/5;
- const extra=lap-10;
- const progressive=1+0.04*Math.pow(extra,1.18);
- return t.r10 + perLap*extra*progressive;
-}
-function stintTime(t,laps){
- let total=0;
- for(let lap=1;lap<=laps;lap++){
-  const lapTime=lapTimeAtStintLap(t,lap);
-  if(lapTime==null)return Infinity;
-  total+=lapTime;
- }
- return total;
-}
-function wearPreference(endWears){
- // Tier 0: every stint ends in the ideal 60–70% window.
- // Tier 1: no stint exceeds 70%, but one or more end below 60%.
- // Tier 2: at least one stint exceeds 70%; >80% is allowed only when needed.
- let tier=0, deviation=0, over70=0, over80=0;
- endWears.forEach(w=>{
-  if(w>70){
-   tier=2;
-   over70+=w-70;
-   if(w>80)over80+=w-80;
-  }else if(w<60){
-   if(tier<1)tier=1;
-   deviation+=60-w;
-  }
- });
- return {tier,deviation,over70,over80};
-}
-function strategyCompare(a,b){
- const pa=a.pref, pb=b.pref;
- return pa.tier-pb.tier
-   || pa.over80-pb.over80
-   || pa.over70-pb.over70
-   || pa.deviation-pb.deviation
-   || a.total-b.total
-   || a.maxWear-b.maxWear
-   || a.stops-b.stops;
-}
-function roundAt(t,z){return z/t.wear}
-function validStint(t,laps,limit){return laps>=1 && t.fast!=null && t.slow!=null && wearAt(t,laps)<=limit}
-function pitWindow(x,j,T,R,L){
- const opt=x.pits[j], tyre=T[x.seq[j]];
- const prev=j===0?0:x.pits[j-1];
- const stintAtOpt=opt-prev;
- // Preferred stop window is 60–70%; later stops remain possible up to 100% when needed.
- const maxStint=Math.floor(L/tyre.wear);
- const latest=Math.min(R-1, prev+maxStint);
- // Earliest sensible stop: don't throw away more than ~15 percentage points
- // of usable tyre life compared with the current fallback limit.
- const minUsefulWear=Math.max(0,L-15);
- const minStint=Math.max(1,Math.ceil(minUsefulWear/tyre.wear));
- const earliest=Math.min(opt,Math.max(prev+1,prev+minStint));
- return {earliest,latest:Math.max(opt,latest),opt};
-}
-function setsNeeded(seq){
- const c=[0,0,0]; seq.forEach(i=>c[i]++); return c;
-}
-function enoughSets(seq,T){
- const n=setsNeeded(seq); return n.every((v,i)=>v<=T[i].sets);
-}
-function strategyLabel(i){return i===0?'Strategie A · Schnellste':i===1?'Strategie B · Alternative':'Strategie C · Sicher'}
-function strategyClass(i){return i===0?'A':i===1?'B':'C'}
-
-
-function strategyDeltaText(x,best){
- if(!best || x===best)return 'Schnellste Strategie';
- const d=x.total-best.total;
- return '+'+formatRaceTime(d)+' gegenüber Strategie A';
-}
-function tacticalHint(x,T,R,P){
- if(!x || !x.pits || !x.pits.length)return '';
- let hints=[];
- x.pits.forEach((pitLap,j)=>{
-   const prev=j===0?0:x.pits[j-1];
-   const next=j===x.pits.length-1?R:x.pits[j+1];
-   const tyre=T[x.seq[j]];
-   const stintLen=pitLap-prev;
-   const currentLapTime=lapTimeAtStintLap(tyre,Math.max(1,stintLen));
-   const nextTyre=T[x.seq[j+1]];
-   const freshNext=lapTimeAtStintLap(nextTyre,1);
-   if(currentLapTime==null||freshNext==null)return;
-   const gainPerLap=currentLapTime-freshNext;
-   if(gainPerLap>800){
-     hints.push('Undercut-Potenzial vor Stopp '+(j+1)+': frischer '+compoundLabel(nextTyre.name)+' ist deutlich schneller.');
-   }else if(gainPerLap<250){
-     hints.push('Overcut möglich vor Stopp '+(j+1)+': aktueller '+compoundLabel(tyre.name)+' verliert noch wenig Pace.');
-   }else{
-     hints.push('Stopp '+(j+1)+' liegt nahe am neutralen Wechselpunkt.');
-   }
- });
- return hints.join(' ');
-}
-function paceSeriesForStrategy(x,T,R){
- const points=[];
- let lapNo=1;
- for(let j=0;j<x.seq.length;j++){
-   const tyre=T[x.seq[j]];
-   const stintLaps=j===0?x.pits[0]:(j<x.pits.length?x.pits[j]-x.pits[j-1]:R-x.pits[x.pits.length-1]);
-   for(let k=1;k<=stintLaps;k++){
-     points.push({lap:lapNo,time:lapTimeAtStintLap(tyre,k),tyre:tyre.name});
-     lapNo++;
-   }
- }
- return points;
-}
-function drawPaceMini(canvas,series,strategy,T,R){
- if(!canvas||!series||!series.length)return;
- const d=window.devicePixelRatio||1;
- const w=Math.max(240,canvas.clientWidth||canvas.parentElement?.clientWidth||300);
- const h=142;
- canvas.width=Math.round(w*d);
- canvas.height=Math.round(h*d);
- canvas.style.height=h+'px';
-
- const ctx=canvas.getContext('2d');
- ctx.setTransform(d,0,0,d,0,0);
- ctx.clearRect(0,0,w,h);
-
- const p={l:42,r:10,t:28,b:24},pw=w-52,ph=h-52;
- const vals=series.map(v=>v.time).filter(Number.isFinite);
- if(!vals.length)return;
-
- let min=Math.min(...vals),max=Math.max(...vals);
- const pad=Math.max(250,(max-min)*0.12);
- min-=pad; max+=pad;
- if(max<=min)max=min+1000;
-
- ctx.strokeStyle='#334155';
- ctx.lineWidth=1;
- ctx.beginPath();
- ctx.moveTo(p.l,p.t);
- ctx.lineTo(p.l,h-p.b);
- ctx.lineTo(w-p.r,h-p.b);
- ctx.stroke();
-
- ctx.fillStyle='#94a3b8';
- ctx.font='10px sans-serif';
- ctx.fillText('R1',p.l,h-7);
- ctx.fillText('R'+series.length,w-p.r-24,h-7);
- ctx.fillText(formatRaceTime(max),2,p.t+7);
- ctx.fillText(formatRaceTime(min),2,h-p.b);
-
- const colors={Soft:'#ef4444',Medium:'#facc15',Hard:'#cbd5e1'};
- const xFor=i=>p.l+pw*(i/Math.max(1,series.length-1));
- const yFor=v=>p.t+ph*(1-((v-min)/(max-min)));
-
- let start=0;
- while(start<series.length){
-   const tyre=series[start].tyre;
-   let end=start;
-   while(end+1<series.length && series[end+1].tyre===tyre)end++;
-
-   ctx.strokeStyle=colors[tyre]||'#ffffff';
-   ctx.lineWidth=2.5;
-   ctx.beginPath();
-   for(let i=start;i<=end;i++){
-     const x=xFor(i),y=yFor(series[i].time);
-     if(i===start)ctx.moveTo(x,y); else ctx.lineTo(x,y);
-   }
-   ctx.stroke();
-
-   ctx.fillStyle=colors[tyre]||'#ffffff';
-   for(let i=start;i<=end;i++){
-     const x=xFor(i),y=yFor(series[i].time);
-     ctx.beginPath();ctx.arc(x,y,2.2,0,Math.PI*2);ctx.fill();
-   }
-   start=end+1;
- }
-
-
-}
-
-
-function paceLossAtStintEnd(t,laps){
- const now=lapTimeAtStintLap(t,Math.max(1,laps));
- return Math.max(0,now-t.fast);
-}
-function crossoverLap(currentTyre,nextTyre,maxLaps=60){
- const fresh=lapTimeAtStintLap(nextTyre,1);
- if(fresh==null)return null;
- for(let l=1;l<=maxLaps;l++){
-  const cur=lapTimeAtStintLap(currentTyre,l);
-  if(cur!=null && cur>=fresh)return l;
- }
- return null;
-}
-
-function localStopCost(x,j,T,R,P,pitLap){
- const prev=j===0?0:x.pits[j-1];
- const nextStop=j===x.pits.length-1?R:x.pits[j+1];
- const curTyre=T[x.seq[j]], nextTyre=T[x.seq[j+1]];
- const curLen=pitLap-prev;
- const nextLen=nextStop-pitLap;
- if(curLen<1||nextLen<1)return Infinity;
- if(wearAt(curTyre,curLen)>100||wearAt(nextTyre,nextLen)>100)return Infinity;
- return stintTime(curTyre,curLen)+stintTime(nextTyre,nextLen)+P*1000;
-}
-function preciseStopAnalysis(x,j,T,R,P){
- const opt=x.pits[j];
- let bestLap=opt,bestCost=Infinity;
- const candidates=[];
- const lo=Math.max((j===0?1:x.pits[j-1]+1),opt-3);
- const hi=Math.min((j===x.pits.length-1?R-1:x.pits[j+1]-1),opt+3);
- for(let lap=lo;lap<=hi;lap++){
-  const cost=localStopCost(x,j,T,R,P,lap);
-  if(!isFinite(cost))continue;
-  candidates.push({lap,cost});
-  if(cost<bestCost){bestCost=cost;bestLap=lap;}
- }
- const early=candidates.filter(c=>c.lap<bestLap).slice(-2).map(c=>c.lap);
- const late=candidates.filter(c=>c.lap>bestLap).slice(0,2).map(c=>c.lap);
- return {bestLap,early,late,candidates};
-}
-function boxWindowHtml(a){
- let h='<div class="boxwindow">';
- a.early.forEach(l=>h+='<span class="boxpill boxearly">R'+l+' früh</span>');
- h+='<span class="boxpill boxoptimal">R'+a.bestLap+' optimal</span>';
- a.late.forEach(l=>h+='<span class="boxpill boxlate">R'+l+' spät</span>');
- h+='</div>';
- return h;
-}
-function calc(){
- updateAllTyreTimes();
- const R=Math.max(5,Math.round(N('race'))),L=100,P=N('pit');
- const raceDuration=parseTime($('raceTime').value);
- const T=[tyre('s'),tyre('m'),tyre('h')],lev=[80,100];
-
- // Chart
- const c=$('chart'),ctx=c.getContext('2d'),d=devicePixelRatio||1,w=c.clientWidth,h=430;
- c.width=w*d;c.height=h*d;ctx.scale(d,d);
- const p={l:46,r:16,t:16,b:46},pw=w-p.l-p.r,ph=h-p.t-p.b;
- ctx.clearRect(0,0,w,h);ctx.font='12px system-ui';ctx.fillStyle='#94a3b8';ctx.strokeStyle='#26344d';
- for(let y=0;y<=100;y+=20){let yy=p.t+ph*(1-y/100);ctx.beginPath();ctx.moveTo(p.l,yy);ctx.lineTo(w-p.r,yy);ctx.stroke();ctx.fillText(y+'%',6,yy+4)}
- const maxLife=Math.max(...T.map(t=>roundAt(t,100)),R),xMax=Math.ceil(maxLife/5)*5;
- window.chartState={T,xMax,p,w,h,pw,ph,canvas:c};
- const selected=window.chartSelection;
- let step=3;
- for(let x=0;x<=xMax;x+=step){let xx=p.l+pw*x/xMax;ctx.beginPath();ctx.moveTo(xx,p.t);ctx.lineTo(xx,h-p.b);ctx.stroke();ctx.fillText(x,xx-5,h-p.b+18)}
- for(const z of lev){let yy=p.t+ph*(1-z/100);ctx.setLineDash([5,5]);ctx.strokeStyle=z===100?'#94a3b8':z>=80?'#ef4444':'#f59e0b';ctx.beginPath();ctx.moveTo(p.l,yy);ctx.lineTo(w-p.r,yy);ctx.stroke();ctx.setLineDash([])}
- const colors=['#ef4444','#facc15','#e5e7eb'];
- T.forEach((t,i)=>{
-   ctx.strokeStyle=colors[i];ctx.lineWidth=3;ctx.beginPath();
-   for(let r=0;r<=xMax;r+=.25){let y=Math.min(100,wearAt(t,r)),xx=p.l+pw*r/xMax,yy=p.t+ph*(1-y/100);r?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy)}ctx.stroke();
-   lev.forEach(z=>{let rr=roundAt(t,z);if(rr>xMax)return;let xx=p.l+pw*rr/xMax,yy=p.t+ph*(1-z/100);ctx.fillStyle=colors[i];ctx.beginPath();ctx.arc(xx,yy,4,0,Math.PI*2);ctx.fill();})
- });
- if(selected && selected.lap<=xMax && T[selected.i]){
-   const t=T[selected.i], wear=Math.min(100,wearAt(t,selected.lap));
-   const xx=p.l+pw*selected.lap/xMax, yy=p.t+ph*(1-wear/100);
-   ctx.save();
-   ctx.fillStyle='#ffffff';
-   ctx.strokeStyle=colors[selected.i];
-   ctx.lineWidth=3;
-   ctx.beginPath();ctx.arc(xx,yy,7,0,Math.PI*2);ctx.fill();ctx.stroke();
-   ctx.restore();
- }
-
- let out=[];
- let fallbackOut=[];
-
- // 1 stop
- for(let a=0;a<3;a++)for(let b=0;b<3;b++){
-   if(a===b)continue;
-   if(!enoughSets([a,b],T))continue;
-   for(let p1=1;p1<=R-1;p1++){
-     const l1=p1,l2=R-p1;
-     if(!validStint(T[a],l1,L)||!validStint(T[b],l2,L))continue;
-     const maxWear=Math.max(wearAt(T[a],l1),wearAt(T[b],l2));
-     const score=stintTime(T[a],l1) + stintTime(T[b],l2) + P*1000;
-     const endWears=[wearAt(T[a],l1),wearAt(T[b],l2)];
-     const candidate={seq:[a,b],stops:1,pits:[p1],total:score,maxWear,pref:wearPreference(endWears),endWears};
-     fallbackOut.push(candidate);
-     if(raceDuration==null || score<=raceDuration)out.push(candidate);
-   }
- }
-
- // 2 stop
- for(let a=0;a<3;a++)for(let b=0;b<3;b++)for(let cidx=0;cidx<3;cidx++){
-   if(new Set([a,b,cidx]).size<2)continue;
-   if(!enoughSets([a,b,cidx],T))continue;
-   for(let p1=1;p1<=R-2;p1++){
-     for(let p2=p1+1;p2<=R-1;p2++){
-       const l1=p1,l2=p2-p1,l3=R-p2;
-       if(!validStint(T[a],l1,L)||!validStint(T[b],l2,L)||!validStint(T[cidx],l3,L))continue;
-       const maxWear=Math.max(wearAt(T[a],l1),wearAt(T[b],l2),wearAt(T[cidx],l3));
-       const score=stintTime(T[a],l1) + stintTime(T[b],l2) + stintTime(T[cidx],l3) + P*1000 + P*1000;
-       const endWears=[wearAt(T[a],l1),wearAt(T[b],l2),wearAt(T[cidx],l3)];
-       const candidate={seq:[a,b,cidx],stops:2,pits:[p1,p2],total:score,maxWear,pref:wearPreference(endWears),endWears};
-       fallbackOut.push(candidate);
-       if(raceDuration==null || score<=raceDuration)out.push(candidate);
-     }
-   }
- }
-
- // If the entered total race time is too aggressive, still show the best
- // technically valid strategies instead of leaving the strategy area empty.
- const targetMissed=(raceDuration!=null && out.length===0 && fallbackOut.length>0);
- if(targetMissed)out=fallbackOut.slice();
- out.sort(strategyCompare);
-
- // Build distinct useful candidates.
- const all=[];
- for(const s of out){
-   const dupe=all.some(u=>u.stops===s.stops && u.seq.join('-')===s.seq.join('-') &&
-     u.pits.length===s.pits.length && u.pits.every((p,i)=>Math.abs(p-s.pits[i])<=1));
-   if(!dupe)all.push(s);
- }
-
- let picks=[];
- if(all.length){
-   picks.push(all[0]); // fastest
-   const nextFast=all.find(x=>x!==picks[0]);
-   if(nextFast)picks.push(nextFast);
-
-   const safePool=all.filter(x=>!picks.includes(x));
-   safePool.sort((a,b)=>a.pref.tier-b.pref.tier || a.maxWear-b.maxWear || a.total-b.total);
-   if(safePool[0])picks.push(safePool[0]);
- }
- const cards=$('strategyCards');
- const bestStrategy=picks[0]||null; LAB_STRATEGIES=picks.slice(0,3); if(LAB_STRATEGIES.length)setTimeout(labSetFromBase,0); cards.innerHTML='';
-const drawPaceCharts=()=>{
-   document.querySelectorAll('.paceMini').forEach(cv=>{
-     const idx=parseInt(cv.dataset.strategy,10);
-     const sx=picks[idx];
-     if(sx)drawPaceMini(cv,paceSeriesForStrategy(sx,T,R),sx,T,R);
-   });
- };
- requestAnimationFrame(()=>requestAnimationFrame(drawPaceCharts));
- setTimeout(drawPaceCharts,80);
- if(!picks.length){
-   cards.innerHTML='<div class="strat"><h3>⚠️ Keine sinnvolle Strategie</h3><div class="muted">Mit den aktuellen Verschleißwerten, dem gewählten Limit und den verfügbaren Reifensätzen ist keine gültige 1- oder 2-Stopp-Strategie möglich. Prüfe insbesondere, ob mindestens zwei verschiedene Reifenmischungen verfügbar sind.</div></div>';
- } else {
-   picks.forEach((x,i)=>{
-     const div=document.createElement('div'); div.className='strat';
-     let body='<h3>'+strategyLabel(i)+'</h3>';
-
-     // Compact visual race timeline.
-     body+='<div class="timeline">';
-     for(let j=0;j<x.seq.length;j++){
-       const startLap=j===0?1:x.pits[j-1]+1;
-       const endLap=j<x.pits.length?x.pits[j]:R;
-       const stintLaps=(j===0?x.pits[0]:(j<x.pits.length?x.pits[j]-x.pits[j-1]:R-x.pits[x.pits.length-1]));
-       const tyre=T[x.seq[j]];
-       const cls=compoundLabel(tyre.name).toLowerCase();
-       const label=(tyre.name==='Soft'?'S':tyre.name==='Medium'?'M':'H')+' '+startLap+'–'+endLap;
-       body+='<div class="seg '+cls+'" style="width:'+(stintLaps/R*100)+'%">'+label+'</div>';
-     }
-     body+='</div>';
-
-     for(let j=0;j<x.seq.length;j++){
-       const startLap=j===0?1:x.pits[j-1]+1;
-       const endLap=j<x.pits.length?x.pits[j]:R;
-       const stintLaps=(j===0?x.pits[0]:(j<x.pits.length?x.pits[j]-x.pits[j-1]:R-x.pits[x.pits.length-1]));
-       const tyre=T[x.seq[j]];
-       body+='<div class="stint"><b>'+compoundLabel(tyre.name)+'</b> · R'+startLap+'–'+endLap+'<br><span class="muted">'+stintLaps+' Runden · '+wearAt(tyre,stintLaps).toFixed(1)+' % Verschleiß</span></div>';
-
-       if(j<x.pits.length){
-         const ana=preciseStopAnalysis(x,j,T,R,P);
-         const nextTyre=T[x.seq[j+1]];
-         const cross=crossoverLap(tyre,nextTyre,Math.max(20,stintLaps+10));
-         const loss=paceLossAtStintEnd(tyre,stintLaps);
-         body+='<div class="stopmeta">Pace-Verlust am Stintende: <b>+'+(loss/1000).toFixed(3).replace('.',',')+' s/Runde</b>';
-         if(cross!=null)body+='<br>Crossover zu frischem '+compoundLabel(nextTyre.name)+': <b>ab Stint-Runde '+cross+'</b>';
-         body+='</div>';
-       }
-     }
-     body+='<div class="stratdelta">'+strategyDeltaText(x,bestStrategy)+'</div>';
-     const hint=tacticalHint(x,T,R,P);
-     if(hint)body+='<div class="tactic">'+hint+'</div>';
-     body+='<div class="pacechart"><div class="pacetitle">Pace-Verlauf</div><canvas class="paceMini" data-strategy="'+i+'"></canvas></div>';
-     body+='<div class="muted">'+x.stops+' Stopp'+(x.stops>1?'s':'')+' · Max. Verschleiß '+x.maxWear.toFixed(1)+' %</div>';
-     div.innerHTML=body; cards.appendChild(div);
-   });
- }
-
- renderCommandCenter();
-}
-
-
-const tyreCanvas=$('chart');
-const chartTip=$('chartTip');
-
-function hideChartTip(){
-  chartTip.style.display='none';
-}
-
-function showChartTipFromEvent(e){
-  const s=window.chartState;
-  if(!s)return;
-
-  const rect=tyreCanvas.getBoundingClientRect();
-  if(!rect.width || !rect.height)return;
-
-  // Canvas is drawn in CSS/logical pixels because ctx.scale(devicePixelRatio).
-  // Therefore pointer coordinates must stay in CSS pixels too.
-  const x=e.clientX-rect.left;
-  const y=e.clientY-rect.top;
-
-  if(x<s.p.l || x>s.w-s.p.r || y<s.p.t || y>s.h-s.p.b){
-    hideChartTip();
-    return;
-  }
-
-  const exactLap=(x-s.p.l)/s.pw*s.xMax;
-  const lap=Math.max(0,Math.min(s.xMax,Math.round(exactLap)));
-
-  let best=null;
-  s.T.forEach((t,i)=>{
-    const wear=Math.min(100,wearAt(t,lap));
-    const yy=s.p.t+s.ph*(1-wear/100);
-    const dist=Math.abs(y-yy);
-    if(!best || dist<best.dist){
-      best={t,i,wear,dist,yy};
+    if (!visible.length) {
+      $('linkList').innerHTML = '<div class="empty">Keine Einträge gefunden.</div>';
+      return;
     }
-  });
-
-  // Generous hit area for touch use.
-  const tolerance=28;
-  if(!best || best.dist>tolerance){
-    hideChartTip();
-    return;
+    $('linkList').innerHTML = visible.map(x => `
+      <article class="item" data-id="${x.id}">
+        <div class="item-main" data-open="${x.id}">
+          <img class="favicon" src="${favicon(x.url)}" alt="" onerror="this.style.visibility='hidden'" />
+          <div class="item-text">
+            <div class="title">${esc(x.title || deriveTitle(x.url))}</div>
+            <div class="meta">${esc(x.category ? x.category + ' · ' : '')}${esc(x.url)}</div>
+            ${x.tags?.length ? `<div class="tags">${x.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`:''}
+          </div>
+        </div>
+        <div class="item-actions">
+          <button class="icon-btn" title="Bearbeiten" data-edit="${x.id}">✎</button>
+          <button class="icon-btn" title="Löschen" data-delete="${x.id}">🗑</button>
+        </div>
+      </article>`).join('');
   }
 
-  window.chartSelection={i:best.i,lap:lap};
-  calc();
+  $('addBtn').onclick = () => { $('formPanel').classList.toggle('hidden'); if (!$('formPanel').classList.contains('hidden')) $('urlInput').focus(); };
+  $('cancelBtn').onclick = () => $('formPanel').classList.add('hidden');
+  $('linkForm').onsubmit = e => {
+    e.preventDefault();
+    const url = normUrl($('urlInput').value);
+    try { new URL(url); } catch { alert('Bitte eine gültige URL eingeben.'); return; }
+    const t = now();
+    links.push({ id:uid(), url, title:$('titleInput').value.trim() || deriveTitle(url), category:$('categoryInput').value.trim(), tags:parseTags($('tagsInput').value), createdAt:t, updatedAt:t, deletedAt:null });
+    saveLinks(); e.target.reset(); $('formPanel').classList.add('hidden'); autoSync();
+  };
+  $('randomBtn').onclick = () => {
+    const arr = activeLinks(); if (!arr.length) return alert('Es sind noch keine Einträge vorhanden.');
+    const x = arr[Math.floor(Math.random()*arr.length)]; location.href = x.url;
+  };
+  ['searchInput','filterInput'].forEach(id => $(id).addEventListener('input',render));
+  $('categoryFilter').addEventListener('change',render);
 
-  chartTip.innerHTML=
-    '<b>'+best.t.name+'</b><br>'+
-    'Runde: '+lap+'<br>'+
-    'Abnutzung: '+best.wear.toFixed(1)+' %';
+  $('linkList').onclick = e => {
+    const open = e.target.closest('[data-open]'); if (open) { const x=links.find(l=>l.id===open.dataset.open); if(x) location.href=x.url; return; }
+    const edit = e.target.closest('[data-edit]'); if (edit) openEdit(edit.dataset.edit);
+    const del = e.target.closest('[data-delete]'); if (del) removeLink(del.dataset.delete);
+  };
+  function removeLink(id) {
+    const x=links.find(l=>l.id===id); if(!x || !confirm(`„${x.title}“ löschen?`)) return;
+    x.deletedAt=x.updatedAt=now(); saveLinks(); autoSync();
+  }
+  function openEdit(id) {
+    const x=links.find(l=>l.id===id); if(!x) return;
+    $('editId').value=x.id; $('editUrl').value=x.url; $('editTitle').value=x.title||''; $('editCategory').value=x.category||''; $('editTags').value=(x.tags||[]).join(', '); $('editDialog').showModal();
+  }
+  $('closeDialog').onclick = () => $('editDialog').close();
+  $('editForm').onsubmit = e => {
+    e.preventDefault(); const x=links.find(l=>l.id===$('editId').value); if(!x) return;
+    const url=normUrl($('editUrl').value); try{new URL(url);}catch{return alert('Ungültige URL.');}
+    x.url=url; x.title=$('editTitle').value.trim()||deriveTitle(url); x.category=$('editCategory').value.trim(); x.tags=parseTags($('editTags').value); x.updatedAt=now();
+    saveLinks(); $('editDialog').close(); autoSync();
+  };
 
-  chartTip.style.display='block';
+  // Dropbox OAuth 2 PKCE — entirely client-side.
+  $('dropboxKey').value = localStorage.getItem(DBX_KEY) || '';
+  $('dropboxKey').addEventListener('change', () => localStorage.setItem(DBX_KEY, $('dropboxKey').value.trim()));
+  $('dropboxConnect').onclick = connectDropbox;
+  $('dropboxSync').onclick = () => syncDropbox(true);
+  $('dropboxDisconnect').onclick = () => { localStorage.removeItem(DBX_TOKEN); localStorage.removeItem(DBX_REFRESH); setSync('Dropbox getrennt. Lokale Daten bleiben erhalten.'); };
 
-  // Position popup within chart wrapper.
-  const wrap=tyreCanvas.parentElement;
-  const wrapRect=wrap.getBoundingClientRect();
-  const localX=e.clientX-wrapRect.left;
-  const localY=e.clientY-wrapRect.top;
+  function redirectUri() { return location.origin + location.pathname; }
+  function setSync(msg) { $('syncStatus').textContent = msg; }
+  function b64url(bytes) { return btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+  async function sha256(s) { return new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))); }
+  async function connectDropbox() {
+    const key=$('dropboxKey').value.trim(); if(!key) return alert('Bitte zuerst den Dropbox App Key eintragen.');
+    localStorage.setItem(DBX_KEY,key);
+    const verifier=b64url(crypto.getRandomValues(new Uint8Array(48))); localStorage.setItem(DBX_VERIFIER,verifier);
+    const challenge=b64url(await sha256(verifier));
+    const p=new URLSearchParams({client_id:key,response_type:'code',code_challenge:challenge,code_challenge_method:'S256',token_access_type:'offline',redirect_uri:redirectUri()});
+    location.href='https://www.dropbox.com/oauth2/authorize?'+p;
+  }
+  async function handleDropboxCallback() {
+    const u=new URL(location.href); const code=u.searchParams.get('code'); if(!code) return;
+    const key=localStorage.getItem(DBX_KEY); const verifier=localStorage.getItem(DBX_VERIFIER); if(!key||!verifier) return;
+    setSync('Dropbox-Anmeldung wird abgeschlossen …');
+    try {
+      const body=new URLSearchParams({code,grant_type:'authorization_code',client_id:key,code_verifier:verifier,redirect_uri:redirectUri()});
+      const r=await fetch('https://api.dropboxapi.com/oauth2/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
+      if(!r.ok) throw new Error(await r.text()); const data=await r.json();
+      localStorage.setItem(DBX_TOKEN,data.access_token); if(data.refresh_token) localStorage.setItem(DBX_REFRESH,data.refresh_token); localStorage.removeItem(DBX_VERIFIER);
+      u.searchParams.delete('code'); u.searchParams.delete('state'); history.replaceState({},'',u.pathname+u.search+u.hash);
+      setSync('Dropbox verbunden.'); await syncDropbox(true);
+    } catch(err) { console.error(err); setSync('Dropbox-Verbindung fehlgeschlagen.'); }
+  }
+  async function accessToken() {
+    const token=localStorage.getItem(DBX_TOKEN); if(token) return token;
+    const refresh=localStorage.getItem(DBX_REFRESH), key=localStorage.getItem(DBX_KEY); if(!refresh||!key) return null;
+    const body=new URLSearchParams({grant_type:'refresh_token',refresh_token:refresh,client_id:key});
+    const r=await fetch('https://api.dropboxapi.com/oauth2/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
+    if(!r.ok) return null; const d=await r.json(); localStorage.setItem(DBX_TOKEN,d.access_token); return d.access_token;
+  }
+  function merge(remote=[]) {
+    const map=new Map();
+    for(const x of [...remote,...links]) { const prev=map.get(x.id); if(!prev || (x.updatedAt||'') >= (prev.updatedAt||'')) map.set(x.id,x); }
+    links=[...map.values()]; localStorage.setItem(STORE,JSON.stringify(links)); render();
+  }
+  async function syncDropbox(manual=false) {
+    const token=await accessToken(); if(!token) { if(manual) setSync('Dropbox ist nicht verbunden.'); return; }
+    try {
+      setSync('Synchronisiere mit Dropbox …');
+      let remote=[];
+      const dl=await fetch('https://content.dropboxapi.com/2/files/download',{method:'POST',headers:{Authorization:'Bearer '+token,'Dropbox-API-Arg':JSON.stringify({path:DBX_FILE})}});
+      if(dl.ok) { const obj=await dl.json(); remote=Array.isArray(obj)?obj:(obj.links||[]); }
+      else if(dl.status!==409) { if(dl.status===401){ localStorage.removeItem(DBX_TOKEN); return syncDropbox(manual); } throw new Error(await dl.text()); }
+      merge(remote);
+      const payload=JSON.stringify({version:VERSION,updatedAt:now(),links},null,2);
+      const up=await fetch('https://content.dropboxapi.com/2/files/upload',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/octet-stream','Dropbox-API-Arg':JSON.stringify({path:DBX_FILE,mode:'overwrite',autorename:false,mute:true})},body:payload});
+      if(!up.ok) throw new Error(await up.text());
+      setSync('Dropbox synchronisiert · '+new Date().toLocaleString('de-DE'));
+    } catch(err) { console.error(err); setSync('Synchronisierung fehlgeschlagen. Lokale Daten sind weiterhin vorhanden.'); }
+  }
+  function autoSync(){ if(localStorage.getItem(DBX_REFRESH)||localStorage.getItem(DBX_TOKEN)) syncDropbox(false); }
 
-  requestAnimationFrame(()=>{
-    const tipW=chartTip.offsetWidth || 150;
-    const tipH=chartTip.offsetHeight || 70;
-    let left=localX+12;
-    let top=localY-tipH-10;
-
-    if(left+tipW>wrapRect.width-6) left=localX-tipW-12;
-    if(left<6) left=6;
-    if(top<6) top=localY+12;
-    if(top+tipH>wrapRect.height-6) top=wrapRect.height-tipH-6;
-
-    chartTip.style.left=left+'px';
-    chartTip.style.top=top+'px';
-  });
-}
-
-tyreCanvas.addEventListener('click',showChartTipFromEvent);
-tyreCanvas.addEventListener('pointerup',e=>{
-  if(e.pointerType!=='mouse') showChartTipFromEvent(e);
-});
-
-
-let LAB_STRATEGIES=[];
-function labSetFromBase(){
- if(!LAB_STRATEGIES.length)return;
- const i=Math.max(0,Math.min(LAB_STRATEGIES.length-1,parseInt($('labBase').value||'0',10))),x=LAB_STRATEGIES[i];
- $('labTyre1').value=String(x.seq[0]);$('labTyre2').value=String(x.seq[1]);if(x.seq[2]!=null)$('labTyre3').value=String(x.seq[2]);
- $('labPit1').value=x.pits[0]??'';$('labPit2').value=x.pits[1]??'';
- $('labPit2Row').style.display=x.stops===2?'grid':'none';$('labTyre3Wrap').style.display=x.stops===2?'block':'none';updateStrategyLab();
-}
-function labBuild(){
- if(!LAB_STRATEGIES.length)return {error:'Keine Ausgangsstrategie verfügbar.'};
- const i=Math.max(0,Math.min(LAB_STRATEGIES.length-1,parseInt($('labBase').value||'0',10))),base=LAB_STRATEGIES[i],R=Math.max(5,Math.round(N('race'))),P=N('pit'),T=[tyre('s'),tyre('m'),tyre('h')],stops=base.stops;
- const seq=stops===1?[+$('labTyre1').value,+$('labTyre2').value]:[+$('labTyre1').value,+$('labTyre2').value,+$('labTyre3').value];
- const p1=Math.floor(Number($('labPit1').value||0)),p2=Math.floor(Number($('labPit2').value||0));
- if(new Set(seq).size<2)return {error:'Mindestens zwei unterschiedliche Slick-Compounds sind erforderlich.'};
- if(stops===1&&!(p1>=1&&p1<R))return {error:'Stopp 1 liegt außerhalb der Renndistanz.'};
- if(stops===2&&!(p1>=1&&p2>p1&&p2<R))return {error:'Die Stopprunden müssen in richtiger Reihenfolge liegen.'};
- if(!enoughSets(seq,T))return {error:'Für diese Reifenfolge sind nicht genügend Reifensätze verfügbar.'};
- const lens=stops===1?[p1,R-p1]:[p1,p2-p1,R-p2],endWears=[];let total=stops*P*1000;
- for(let j=0;j<lens.length;j++){if(!validStint(T[seq[j]],lens[j],100))return {error:'Nicht fahrbar: Ein Stint überschreitet 100 % Reifenverschleiß.'};total+=stintTime(T[seq[j]],lens[j]);endWears.push(wearAt(T[seq[j]],lens[j]));}
- return {base,seq,lens,endWears,total,T};
-}
-function updateStrategyLab(){
- const x=labBuild();
- if(x.error){$('labTime').textContent='–';$('labDelta').textContent='–';$('labDelta').className='labdelta labneutral';$('labStatus').textContent=x.error;$('labStints').innerHTML='';return}
- $('labTime').textContent=formatRaceTime(x.total);const d=x.total-x.base.total;
- $('labDelta').textContent=(d>0?'+':d<0?'−':'±')+formatRaceTime(Math.abs(d))+' zur Ausgangsstrategie';$('labDelta').className='labdelta '+(d<0?'labgood':d>0?'labbad':'labneutral');
- $('labStatus').textContent=d<0?'Rechnerisch schneller als die Ausgangsstrategie.':d>0?'Rechnerisch langsamer als die Ausgangsstrategie.':'Gleiche berechnete Gesamtzeit.';
- let s=1,html='';x.lens.forEach((len,j)=>{const e=s+len-1,t=x.T[x.seq[j]];html+='<div class="labstint"><span><b>'+t.name+'</b> · R'+s+'–'+e+'</span><span>'+len+' R</span><span>'+x.endWears[j].toFixed(1)+' %</span></div>';s=e+1});$('labStints').innerHTML=html;
-}
-function labStep(id,d){const el=$(id),R=Math.max(5,Math.round(N('race')));let v=Math.floor(Number(el.value||0))+d;v=Math.max(1,Math.min(R-1,v));el.value=v;updateStrategyLab()}
-
-
-$('labBase').addEventListener('change',labSetFromBase);
-['labTyre1','labTyre2','labTyre3','labPit1','labPit2'].forEach(id=>$(id).addEventListener('input',updateStrategyLab));
-$('labPit1Minus').addEventListener('click',()=>labStep('labPit1',-1));$('labPit1Plus').addEventListener('click',()=>labStep('labPit1',1));
-$('labPit2Minus').addEventListener('click',()=>labStep('labPit2',-1));$('labPit2Plus').addEventListener('click',()=>labStep('labPit2',1));
-
-
-const PROFILE_HISTORY_KEY='f1_strategy_profile_history_v1';
-const PROFILE_HISTORY_DELETED_KEY='f1_strategy_profile_history_deleted_v1';
-function getProfileHistory(){try{const d=JSON.parse(localStorage.getItem(PROFILE_HISTORY_KEY)||'{}');return d&&typeof d==='object'?d:{}}catch(e){return {}}}
-function setProfileHistory(d){try{localStorage.setItem(PROFILE_HISTORY_KEY,JSON.stringify(d||{}))}catch(e){}}
-function getDeletedHistory(){try{const d=JSON.parse(localStorage.getItem(PROFILE_HISTORY_DELETED_KEY)||'{}');return d&&typeof d==='object'?d:{}}catch(e){return {}}}
-function setDeletedHistory(d){try{localStorage.setItem(PROFILE_HISTORY_DELETED_KEY,JSON.stringify(d||{}))}catch(e){}}
-function historyProfileName(){return (($('profileSelect')&&$('profileSelect').value)||($('profileName')&&$('profileName').value)||'').trim()}
-function makeHistorySnapshot(){const values={};SAVE_IDS.forEach(id=>{const el=$(id);if(el)values[id]=el.value});return {id:'h_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),createdAt:new Date().toISOString(),values}}
-function mergeHistoryState(lh,ld,rh,rd){
- const profiles=new Set([...Object.keys(lh||{}),...Object.keys(rh||{})]),history={},deleted=Object.assign({},ld||{},rd||{});
- profiles.forEach(name=>{
-  const map={};[...(lh[name]||[]),...(rh[name]||[])].forEach(x=>{if(x&&x.id){const old=map[x.id];if(!old||Date.parse(x.createdAt||0)>=Date.parse(old.createdAt||0))map[x.id]=x}});
-  Object.keys(deleted).forEach(k=>{if(k.startsWith(name+'|')){const id=k.slice(name.length+1);delete map[id]}});
-  const arr=Object.values(map).sort((a,b)=>Date.parse(a.createdAt)-Date.parse(b.createdAt));if(arr.length)history[name]=arr;
- });
- return {history,deleted};
-}
-function historyStats(s,p){
- const g=id=>(s.values&&s.values[id]!=null)?s.values[id]:'',r1=parseLapTime(g(p+'r1')),r5=parseLapTime(g(p+'r5')),r10=parseLapTime(g(p+'r10')),wear=Number(g(p+'w'));
- if(r1==null||r5==null||r10==null)return {avg:null,stint:null,wear:isFinite(wear)?wear:null};
- const t={r1,r5,r10};let stint=0;for(let l=1;l<=10;l++)stint+=lapTimeAtStintLap(t,l);
- return {avg:(r1+r5+r10)/3,stint,wear:isFinite(wear)?wear:null};
-}
-function histD(v){if(v==null||!isFinite(v))return '–';return (v<0?'−':v>0?'+':'±')+formatRaceTime(Math.abs(v))}
-function histC(v){return v==null||!isFinite(v)||v===0?'histneutral':v<0?'histpositive':'histnegative'}
-function renderHistory(){
- if(!$('historyList'))return;const name=historyProfileName(),all=getProfileHistory(),list=(name&&all[name]?all[name]:[]).slice().sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt));
- $('historyList').innerHTML='';$('historyA').innerHTML='';$('historyB').innerHTML='';
- if(!name){$('historyStatus').textContent='Bitte zuerst ein Streckenprofil wählen.';$('historyCompare').innerHTML='';return}
- if(!list.length){$('historyStatus').textContent='Noch keine Messstände für „'+name+'“ gespeichert.';$('historyCompare').innerHTML='';return}
- $('historyStatus').textContent=list.length+' Messstand'+(list.length===1?'':'e')+' gespeichert.';
- list.forEach(s=>{const d=new Date(s.createdAt),label=d.toLocaleDateString('de-DE')+' · '+d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});for(const id of ['historyA','historyB']){const o=document.createElement('option');o.value=s.id;o.textContent=label;$(id).appendChild(o)}const div=document.createElement('div');div.className='histitem';div.innerHTML='<div class="histtitle">'+label+'</div><div class="histmeta">Soft '+(s.values.sw||'–')+' % · Medium '+(s.values.mw||'–')+' % · Hard '+(s.values.hw||'–')+' % Verschleiß nach 10 Runden</div>';$('historyList').appendChild(div)});
- if(list.length>1){$('historyA').selectedIndex=1;$('historyB').selectedIndex=0}renderHistoryCompare();
-}
-function renderHistoryCompare(){
- const name=historyProfileName(),list=(getProfileHistory()[name]||[]),a=list.find(x=>x.id===$('historyA').value),b=list.find(x=>x.id===$('historyB').value);if(!a||!b){$('historyCompare').innerHTML='';return}
- let html='';[['Soft','s'],['Medium','m'],['Hard','h']].forEach(([n,p])=>{const A=historyStats(a,p),B=historyStats(b,p),pace=A.avg!=null&&B.avg!=null?B.avg-A.avg:null,st=A.stint!=null&&B.stint!=null?B.stint-A.stint:null,w=A.wear!=null&&B.wear!=null?B.wear-A.wear:null;html+='<div class="histmetric"><b>'+n+'</b><div class="'+histC(pace)+'">Ø Pace '+histD(pace)+'</div><div class="'+histC(st)+'">10 Runden '+histD(st)+'</div><div class="'+histC(w)+'">Verschleiß '+(w==null?'–':(w>0?'+':'')+w.toFixed(1)+' %')+'</div></div>'});$('historyCompare').innerHTML=html;
-}
-function addHistorySnapshot(){
- const name=historyProfileName();if(!name){$('historyStatus').textContent='Bitte zuerst ein Streckenprofil wählen.';return}
- const all=getProfileHistory(),s=makeHistorySnapshot();if(!all[name])all[name]=[];all[name].push(s);setProfileHistory(all);renderHistory();autoSyncDropbox();
-}
-function deleteHistorySnapshot(){
- const name=historyProfileName(),id=$('historyB').value||$('historyA').value;if(!name||!id)return;if(!confirm('Ausgewählten Messstand wirklich löschen?'))return;
- const all=getProfileHistory();all[name]=(all[name]||[]).filter(x=>x.id!==id);if(!all[name].length)delete all[name];setProfileHistory(all);
- const del=getDeletedHistory();del[name+'|'+id]={deletedAt:new Date().toISOString()};setDeletedHistory(del);renderHistory();autoSyncDropbox();
-}
-
-
-if($('historyAddBtn'))$('historyAddBtn').addEventListener('click',addHistorySnapshot);
-if($('historyDeleteBtn'))$('historyDeleteBtn').addEventListener('click',deleteHistorySnapshot);
-if($('historyA'))$('historyA').addEventListener('change',renderHistoryCompare);
-if($('historyB'))$('historyB').addEventListener('change',renderHistoryCompare);
-if($('profileSelect'))$('profileSelect').addEventListener('change',()=>setTimeout(renderHistory,0));
-if($('profileName'))$('profileName').addEventListener('input',()=>setTimeout(renderHistory,0));
-setTimeout(renderHistory,0);
-
-
-function raceCardStrategy(){return (typeof LAB_STRATEGIES!=='undefined'&&LAB_STRATEGIES.length)?LAB_STRATEGIES[0]:null}
-function raceCardNames(){return ['🔴 Soft','🟡 Medium','⚪ Hard']}
-function raceCardRender(){
- const x=raceCardStrategy(),R=Math.max(1,Math.round(N('race'))),names=raceCardNames();
- const profile=(($('profileSelect')&&$('profileSelect').value)||($('profileName')&&$('profileName').value)||'').trim();
- $('raceCardTrack').textContent=profile||('Renndistanz · '+R+' Runden');
- if(!x){$('raceCardPlan').innerHTML='<div class="raceplan">Keine Strategie verfügbar.</div>';$('raceAlternative').innerHTML='';return}
- let start=1,plan='<div class="raceplan">';
- x.seq.forEach((c,i)=>{
-   const end=i<x.pits.length?x.pits[i]:R,len=end-start+1,t=tyre(['s','m','h'][c]),wear=wearAt(t,len);
-   plan+='<div class="racecompound">'+names[c]+' <span class="small">R'+start+'–'+end+'</span></div>';
-   plan+='<div class="racestats"><div class="racestat"><span class="small">STINT</span><b>'+len+' Runden</b></div><div class="racestat"><span class="small">VERSCHLEISS ENDE</span><b>'+wear.toFixed(1)+' %</b></div></div>';
-   if(i<x.pits.length)plan+='<div class="racearrow">↓</div><div class="racepit">BOX · RUNDE '+x.pits[i]+'</div><div class="racearrow">↓</div>';
-   start=end+1;
- });
- plan+='</div>';$('raceCardPlan').innerHTML=plan;
- const alt=(typeof LAB_STRATEGIES!=='undefined'&&LAB_STRATEGIES[1])?LAB_STRATEGIES[1]:null;
- if(alt){const seq=alt.seq.map(c=>names[c]).join(' → '),pits=alt.pits.map(p=>'R'+p).join(' / ');$('raceAlternative').innerHTML='<b>PLAN B</b><div class="small" style="margin-top:4px">'+seq+' · Box '+pits+'</div>'}
- else $('raceAlternative').innerHTML='<b>PLAN B</b><div class="small" style="margin-top:4px">Keine Alternative verfügbar.</div>';
-}
-function openRaceCard(){raceCardRender();$('raceOverlay').classList.add('open');document.body.classList.add('racecard-active')}
-function closeRaceCard(){$('raceOverlay').classList.remove('open');document.body.classList.remove('racecard-active')}
-
-
-
-
-function renderCommandCenter(){
- const x=(typeof LAB_STRATEGIES!=='undefined'&&LAB_STRATEGIES.length)?LAB_STRATEGIES[0]:null;
- const names=['🔴 Soft','🟡 Medium','⚪ Hard'],keys=['s','m','h'];
- if(!x){
-   $('commandTitle').textContent='Keine Strategie verfügbar';
-   $('commandTimeline').innerHTML='';
-   $('commandTime').textContent='–';$('commandWear').textContent='–';$('commandStops').textContent='–';$('commandPace').textContent='–';
-   return;
- }
- $('commandTitle').textContent=x.seq.map(c=>names[c]).join(' → ');
- let start=1,R=Math.max(1,Math.round(N('race'))),html='',maxWear=0,maxLoss=0;
- x.seq.forEach((c,i)=>{
-   const end=i<x.pits.length?x.pits[i]:R;
-   const len=end-start+1,t=tyre(keys[c]),wear=wearAt(t,len),loss=paceLossAtStintEnd(t,len);
-   maxWear=Math.max(maxWear,wear); maxLoss=Math.max(maxLoss,loss||0);
-   html+='<div class="commandseg"><strong>'+names[c]+'</strong><span>R'+start+'–'+end+' · '+len+' Runden</span></div>';
-   if(i<x.pits.length)html+='<div class="commandpit"><strong>BOX R'+x.pits[i]+'</strong></div>';
-   start=end+1;
- });
- $('commandTimeline').innerHTML=html;
- $('commandTime').textContent=formatRaceTime(x.total);
- $('commandWear').textContent=maxWear.toFixed(1)+' %';
- $('commandStops').textContent=x.stops;
- $('commandPace').textContent='+'+(maxLoss/1000).toFixed(2).replace('.',',')+' s';
-
- renderStrategyStatus(); updateTrackSubtitle();}
-
-loadInputs();
-updateAllTyreTimes();
-calc();
-updateTrackSubtitle();
-onresize=()=>{hideChartTip();calc();};
-
+  render(); handleDropboxCallback();
+  if(localStorage.getItem(DBX_REFRESH)||localStorage.getItem(DBX_TOKEN)) setTimeout(()=>syncDropbox(false),400);
+})();
 </script>
-
-<div class="raceoverlay" id="raceOverlay">
- <div class="raceinner">
-  <div class="racehead">
-   <div><h2>F1 Strategy Manager · Race Card</h2><div class="racetrack" id="raceCardTrack">Aktuelle Strategie</div></div>
-   <button type="button" class="raceclose" id="raceCardClose" onclick="closeRaceCard()">SCHLIESSEN</button>
-  </div>
-  <div id="raceCardPlan"></div>
-  <div class="racealt" id="raceAlternative"></div>
- </div>
-</div>
-
-</body></html>
-<style>
-.pacechart .paceMini{height:142px!important;min-height:142px!important}
-.stopmeta{margin:7px 0;padding:8px 10px;border-radius:10px;background:#0f172a;border:1px solid #263449;font-size:12px;line-height:1.45}
-.boxwindow{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
-.boxpill{padding:5px 8px;border-radius:999px;font-size:11px;border:1px solid #334155}
-.boxearly{background:#172033}
-.boxoptimal{background:#24321d;font-weight:700}
-.boxlate{background:#321d1d}
-
-
-
-
-
-
-
-@media(max-width:640px){}
-
-
-</style>
+</body>
+</html>
