@@ -109,7 +109,7 @@
     <div class="topbar">
       <div><h1>Meine Links</h1></div>
       <div class="brand">
-        <div class="version">Version 1.13</div>
+        <div class="version">Version 1.14</div>
         <div class="maker">Made by BreakCheady</div>
       </div>
     </div>
@@ -125,7 +125,11 @@
         <div class="form-grid">
           <input class="field full" id="urlInput" type="url" placeholder="https://example.com" required />
           <input class="field full" id="titleInput" placeholder="Titel (optional – wird sonst aus dem Link abgeleitet)" />
-          <input class="field" id="categoryInput" placeholder="Kategorie" />
+          <select class="select" id="categoryInput">
+            <option value="">Keine Kategorie</option>
+            <option value="__new__">＋ Neue Kategorie…</option>
+          </select>
+          <input class="field hidden" id="newCategoryInput" placeholder="Neue Kategorie" />
           <input class="field" id="tagsInput" placeholder="Tags, durch Komma getrennt" />
         </div>
         <div class="form-actions">
@@ -163,7 +167,11 @@
         <div class="form-grid">
           <input class="field full" id="editUrl" type="url" required />
           <input class="field full" id="editTitle" placeholder="Titel" />
-          <input class="field" id="editCategory" placeholder="Kategorie" />
+          <select class="select" id="editCategory">
+            <option value="">Keine Kategorie</option>
+            <option value="__new__">＋ Neue Kategorie…</option>
+          </select>
+          <input class="field hidden" id="editNewCategory" placeholder="Neue Kategorie" />
           <input class="field" id="editTags" placeholder="Tags, durch Komma getrennt" />
         </div>
         <div class="form-actions"><button class="btn primary" type="submit">Änderungen speichern</button></div>
@@ -173,7 +181,7 @@
 
 <script>
 (() => {
-  const VERSION = '1.13';
+  const VERSION = '1.14';
   const DATA_VERSION = 2;
   // IMPORTANT: This storage key is intentionally permanent across app updates.
   const STORE = 'linkwebapp.v103.links';
@@ -244,6 +252,37 @@
   function parseTags(v) { return [...new Set(v.split(',').map(x=>x.trim()).filter(Boolean))]; }
   function activeLinks() { return links.filter(x => !x.deletedAt); }
 
+  function categoryNames() {
+    return [...new Set(activeLinks().map(x => (x.category || '').trim()).filter(Boolean))]
+      .sort((a,b) => a.localeCompare(b, 'de'));
+  }
+
+  function fillCategorySelect(selectId, selectedValue='') {
+    const el = $(selectId);
+    if (!el) return;
+    const selected = selectedValue || '';
+    const cats = categoryNames();
+    if (selected && !cats.includes(selected)) cats.push(selected);
+    cats.sort((a,b) => a.localeCompare(b, 'de'));
+    el.innerHTML =
+      '<option value="">Keine Kategorie</option>' +
+      cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('') +
+      '<option value="__new__">＋ Neue Kategorie…</option>';
+    el.value = selected && cats.includes(selected) ? selected : '';
+  }
+
+  function chosenCategory(selectId, newInputId) {
+    const selected = $(selectId).value;
+    return selected === '__new__' ? $(newInputId).value.trim() : selected.trim();
+  }
+
+  function toggleNewCategory(selectId, inputId) {
+    const isNew = $(selectId).value === '__new__';
+    $(inputId).classList.toggle('hidden', !isNew);
+    if (isNew) $(inputId).focus();
+    else $(inputId).value = '';
+  }
+
   function render() {
     const q = ($('filterInput').value || '').trim().toLowerCase();
     const cat = $('categoryFilter').value;
@@ -277,7 +316,18 @@
       </article>`).join('');
   }
 
-  $('addBtn').onclick = () => { $('formPanel').classList.toggle('hidden'); if (!$('formPanel').classList.contains('hidden')) $('urlInput').focus(); };
+  $('addBtn').onclick = () => {
+    const opening = $('formPanel').classList.contains('hidden');
+    $('formPanel').classList.toggle('hidden');
+    if (opening) {
+      fillCategorySelect('categoryInput');
+      $('newCategoryInput').classList.add('hidden');
+      $('newCategoryInput').value = '';
+      $('urlInput').focus();
+    }
+  };
+  $('categoryInput').addEventListener('change', () => toggleNewCategory('categoryInput', 'newCategoryInput'));
+  $('editCategory').addEventListener('change', () => toggleNewCategory('editCategory', 'editNewCategory'));
   function exitRemoveMode() {
     removeSelection.clear();
     removeMode = false;
@@ -314,14 +364,23 @@
     exitRemoveMode();
     if (hadSelection) autoSync();
   };
-  $('cancelBtn').onclick = () => $('formPanel').classList.add('hidden');
+  $('cancelBtn').onclick = () => {
+    $('formPanel').classList.add('hidden');
+    $('newCategoryInput').value = '';
+    $('newCategoryInput').classList.add('hidden');
+  };
   $('linkForm').onsubmit = e => {
     e.preventDefault();
     const url = normUrl($('urlInput').value);
     try { new URL(url); } catch { alert('Bitte eine gültige URL eingeben.'); return; }
     const t = now();
-    links.push({ id:uid(), url, title:$('titleInput').value.trim() || deriveTitle(url), category:$('categoryInput').value.trim(), tags:parseTags($('tagsInput').value), createdAt:t, updatedAt:t, deletedAt:null });
-    saveLinks(); e.target.reset(); $('formPanel').classList.add('hidden'); autoSync();
+    links.push({ id:uid(), url, title:$('titleInput').value.trim() || deriveTitle(url), category:chosenCategory('categoryInput','newCategoryInput'), tags:parseTags($('tagsInput').value), createdAt:t, updatedAt:t, deletedAt:null });
+    saveLinks();
+    e.target.reset();
+    $('newCategoryInput').value = '';
+    $('newCategoryInput').classList.add('hidden');
+    $('formPanel').classList.add('hidden');
+    autoSync();
   };
   $('randomBtn').onclick = () => {
     const cat = $('categoryFilter').value;
@@ -362,13 +421,20 @@
 
   function openEdit(id) {
     const x=links.find(l=>l.id===id); if(!x) return;
-    $('editId').value=x.id; $('editUrl').value=x.url; $('editTitle').value=x.title||''; $('editCategory').value=x.category||''; $('editTags').value=(x.tags||[]).join(', '); $('editDialog').showModal();
+    $('editId').value=x.id;
+    $('editUrl').value=x.url;
+    $('editTitle').value=x.title||'';
+    fillCategorySelect('editCategory', x.category||'');
+    $('editNewCategory').value='';
+    $('editNewCategory').classList.add('hidden');
+    $('editTags').value=(x.tags||[]).join(', ');
+    $('editDialog').showModal();
   }
   $('closeDialog').onclick = () => $('editDialog').close();
   $('editForm').onsubmit = e => {
     e.preventDefault(); const x=links.find(l=>l.id===$('editId').value); if(!x) return;
     const url=normUrl($('editUrl').value); try{new URL(url);}catch{return alert('Ungültige URL.');}
-    x.url=url; x.title=$('editTitle').value.trim()||deriveTitle(url); x.category=$('editCategory').value.trim(); x.tags=parseTags($('editTags').value); x.updatedAt=now();
+    x.url=url; x.title=$('editTitle').value.trim()||deriveTitle(url); x.category=chosenCategory('editCategory','editNewCategory'); x.tags=parseTags($('editTags').value); x.updatedAt=now();
     saveLinks(); $('editDialog').close(); autoSync();
   };
 
