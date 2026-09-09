@@ -80,6 +80,9 @@
     .tags { margin-top:6px; display:flex; gap:5px; flex-wrap:wrap; }
     .tag { font-size:11px; padding:3px 7px; border-radius:999px; background:#f1f1f2; }
     .item-actions { display:flex; gap:4px; }
+    .remove-check { display:none; flex:0 0 auto; width:20px; height:20px; margin:10px 2px 0 0; accent-color:#dc2626; cursor:pointer; }
+    .remove-mode .remove-check { display:block; }
+    .remove-mode .item-actions { display:none; }
     .icon-btn { border:0; background:transparent; border-radius:9px; min-width:40px; min-height:40px; cursor:pointer; font-size:18px; }
     .icon-btn:hover { background:#f4f4f5; }
     .empty { text-align:center; color:var(--muted); padding:44px 16px; background:#fff; border:1px dashed #d4d4d8; border-radius:14px; }
@@ -106,7 +109,7 @@
     <div class="topbar">
       <div><h1>Meine Links</h1></div>
       <div class="brand">
-        <div class="version">Version 1.08</div>
+        <div class="version">Version 1.12</div>
         <div class="maker">Made by BreakCheady</div>
       </div>
     </div>
@@ -170,7 +173,7 @@
 
 <script>
 (() => {
-  const VERSION = '1.08';
+  const VERSION = '1.11';
   const DATA_VERSION = 2;
   // IMPORTANT: This storage key is intentionally permanent across app updates.
   const STORE = 'linkwebapp.v103.links';
@@ -185,6 +188,7 @@
   const $ = id => document.getElementById(id);
   let links = loadAndMigrateLinks();
   let removeMode = false;
+  const removeSelection = new Set();
 
   function now() { return new Date().toISOString(); }
   function uid() { return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2); }
@@ -230,6 +234,12 @@
     try { const u = new URL(url); return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(u.hostname)}&sz=64`; }
     catch { return ''; }
   }
+  function faviconFallback(img, url) {
+    if (img.dataset.fallback) { img.style.visibility = 'hidden'; return; }
+    img.dataset.fallback = '1';
+    try { img.src = new URL('/favicon.ico', url).href; }
+    catch { img.style.visibility = 'hidden'; }
+  }
   function esc(s='') { return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
   function parseTags(v) { return [...new Set(v.split(',').map(x=>x.trim()).filter(Boolean))]; }
   function activeLinks() { return links.filter(x => !x.deletedAt); }
@@ -252,8 +262,9 @@
     }
     $('linkList').innerHTML = visible.map(x => `
       <article class="item${removeMode ? ' remove-mode' : ''}" data-id="${x.id}">
+        <input class="remove-check" type="checkbox" aria-label="Eintrag zum Entfernen auswählen" data-select="${x.id}" ${removeSelection.has(x.id) ? 'checked' : ''} />
         <div class="item-main" data-open="${x.id}">
-          <img class="favicon" src="${favicon(x.url)}" alt="" onerror="this.style.visibility='hidden'" />
+          <img class="favicon" src="${favicon(x.url)}" alt="" loading="lazy" onerror="faviconFallback(this, '${esc(x.url)}')" />
           <div class="item-text">
             <div class="title">${esc(x.title || deriveTitle(x.url))}</div>
             <div class="meta">${esc(x.category ? x.category + ' · ' : '')}${esc(x.url)}</div>
@@ -262,17 +273,46 @@
         </div>
         <div class="item-actions">
           <button class="icon-btn" title="Bearbeiten" data-edit="${x.id}">✎</button>
-          <button class="icon-btn" title="Löschen" data-delete="${x.id}">🗑</button>
         </div>
       </article>`).join('');
   }
 
   $('addBtn').onclick = () => { $('formPanel').classList.toggle('hidden'); if (!$('formPanel').classList.contains('hidden')) $('urlInput').focus(); };
-  $('removeBtn').onclick = () => {
-    removeMode = !removeMode;
-    $('removeBtn').classList.toggle('active', removeMode);
-    $('removeBtn').textContent = removeMode ? '✓ Entfernen beenden' : '− Entfernen';
+  function exitRemoveMode() {
+    removeSelection.clear();
+    removeMode = false;
+    $('removeBtn').classList.remove('active');
+    $('removeBtn').textContent = '− Entfernen';
     render();
+  }
+
+  $('removeBtn').onclick = () => {
+    if (!removeMode) {
+      removeMode = true;
+      removeSelection.clear();
+      $('removeBtn').classList.add('active');
+      $('removeBtn').textContent = '✓ Entfernen bestätigen';
+      render();
+      return;
+    }
+
+    // Ein zweiter Klick beendet den Entfernen-Modus immer.
+    // Falls Einträge markiert sind, werden sie vorher gelöscht.
+    if (removeSelection.size) {
+      const t = now();
+      for (const x of links) {
+        if (!x.deletedAt && removeSelection.has(x.id)) {
+          x.deletedAt = t;
+          x.updatedAt = t;
+        }
+      }
+      localStorage.setItem(STORE, JSON.stringify(links));
+      localStorage.setItem(DATA_VERSION_KEY, String(DATA_VERSION));
+    }
+
+    const hadSelection = removeSelection.size > 0;
+    exitRemoveMode();
+    if (hadSelection) autoSync();
   };
   $('cancelBtn').onclick = () => $('formPanel').classList.add('hidden');
   $('linkForm').onsubmit = e => {
@@ -290,17 +330,31 @@
   $('filterInput').addEventListener('input',render);
   $('categoryFilter').addEventListener('change',render);
 
+  $('linkList').addEventListener('change', e => {
+    const select = e.target.closest('[data-select]');
+    if (!removeMode || !select) return;
+    if (select.checked) removeSelection.add(select.dataset.select);
+    else removeSelection.delete(select.dataset.select);
+  });
+
   $('linkList').onclick = e => {
-    const article = e.target.closest('[data-id]');
-    if (removeMode && article) { removeLink(article.dataset.id); return; }
+    if (removeMode) return;
     const open = e.target.closest('[data-open]'); if (open) { const x=links.find(l=>l.id===open.dataset.open); if(x) location.href=x.url; return; }
     const edit = e.target.closest('[data-edit]'); if (edit) openEdit(edit.dataset.edit);
-    const del = e.target.closest('[data-delete]'); if (del) removeLink(del.dataset.delete);
   };
-  function removeLink(id) {
-    const x=links.find(l=>l.id===id); if(!x || !confirm(`„${x.title}“ löschen?`)) return;
-    x.deletedAt=x.updatedAt=now(); saveLinks(); autoSync();
-  }
+
+  $('linkList').addEventListener('click', e => {
+    if (!removeMode) return;
+    if (e.target.matches('.remove-check')) return;
+    const item = e.target.closest('.item[data-id]');
+    if (!item) return;
+    const cb = item.querySelector('.remove-check');
+    if (!cb) return;
+    cb.checked = !cb.checked;
+    if (cb.checked) removeSelection.add(item.dataset.id);
+    else removeSelection.delete(item.dataset.id);
+  });
+
   function openEdit(id) {
     const x=links.find(l=>l.id===id); if(!x) return;
     $('editId').value=x.id; $('editUrl').value=x.url; $('editTitle').value=x.title||''; $('editCategory').value=x.category||''; $('editTags').value=(x.tags||[]).join(', '); $('editDialog').showModal();
