@@ -50,37 +50,21 @@
     .form-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:10px; }
     .sync-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .sync-row .field { flex:1 1 260px; }
-    .sync-status { margin-top:10px; font-size:13px; color:var(--muted); transition:color .25s ease, text-shadow .25s ease; }
+    .sync-status { margin-top:10px; font-size:13px; color:var(--muted); transition:color .2s ease; }
     .sync-status.syncing,
-    .sync-status.connecting {
-      color:#25d366;
-      font-weight:700;
-      text-shadow:0 0 5px rgba(37,211,102,.9), 0 0 12px rgba(37,211,102,.65), 0 0 22px rgba(37,211,102,.4);
-      animation:syncGlow 1.15s ease-in-out infinite alternate;
-    }
+    .sync-status.connecting,
     .sync-status.synced {
-      color:#25d366;
-      font-weight:650;
-      text-shadow:0 0 5px rgba(37,211,102,.55), 0 0 12px rgba(37,211,102,.25);
-    }
-    .sync-status.disconnecting {
-      color:#ff3b30;
+      color:#168a45;
       font-weight:700;
-      text-shadow:0 0 5px rgba(255,59,48,.9), 0 0 12px rgba(255,59,48,.65), 0 0 22px rgba(255,59,48,.4);
-      animation:disconnectGlow 1.15s ease-in-out infinite alternate;
+      text-shadow:none;
+      animation:none;
     }
+    .sync-status.disconnecting,
     .sync-status.disconnected {
-      color:#ff3b30;
-      font-weight:650;
-      text-shadow:0 0 5px rgba(255,59,48,.55), 0 0 12px rgba(255,59,48,.25);
-    }
-    @keyframes syncGlow {
-      from { opacity:.78; text-shadow:0 0 4px rgba(37,211,102,.65), 0 0 9px rgba(37,211,102,.35); }
-      to { opacity:1; text-shadow:0 0 7px rgba(37,211,102,1), 0 0 16px rgba(37,211,102,.8), 0 0 28px rgba(37,211,102,.5); }
-    }
-    @keyframes disconnectGlow {
-      from { opacity:.78; text-shadow:0 0 4px rgba(255,59,48,.65), 0 0 9px rgba(255,59,48,.35); }
-      to { opacity:1; text-shadow:0 0 7px rgba(255,59,48,1), 0 0 16px rgba(255,59,48,.8), 0 0 28px rgba(255,59,48,.5); }
+      color:#c62828;
+      font-weight:700;
+      text-shadow:none;
+      animation:none;
     }
     .filters { display:grid; grid-template-columns:1fr 180px; gap:10px; margin-bottom:14px; }
     .list { display:flex; flex-direction:column; gap:10px; }
@@ -120,7 +104,7 @@
     <div class="topbar">
       <div><h1>Meine Links</h1></div>
       <div class="brand">
-        <div class="version">Version 1.05</div>
+        <div class="version">Version 1.07</div>
         <div class="maker">Made by BreakCheady</div>
       </div>
     </div>
@@ -161,7 +145,7 @@
         <button class="btn ghost" id="dropboxSync">Synchronisieren</button>
         <button class="btn danger" id="dropboxDisconnect">Trennen</button>
       </div>
-      <div class="sync-status" id="syncStatus">Dropbox ist optional. Ohne Verbindung werden alle Daten nur in diesem Browser gespeichert.</div>
+      <div class="sync-status" id="syncStatus">Daten werden update-sicher im Browser gespeichert. Dropbox ist optional und synchronisiert dieselben Einträge geräteübergreifend.</div>
       <p class="small">Für Dropbox muss diese HTML-Datei über HTTPS oder localhost geöffnet werden. In der Dropbox Developer Console dieselbe Adresse als Redirect URI eintragen und „App folder“ als Zugriffstyp verwenden.</p>
     </section>
   </main>
@@ -184,8 +168,12 @@
 
 <script>
 (() => {
-  const VERSION = '1.03';
+  const VERSION = '1.07';
+  const DATA_VERSION = 2;
+  // IMPORTANT: This storage key is intentionally permanent across app updates.
   const STORE = 'linkwebapp.v103.links';
+  const DATA_VERSION_KEY = 'linkwebapp.dataVersion';
+  const MIGRATION_BACKUP_KEY = 'linkwebapp.migrationBackup';
   const DBX_KEY = 'linkwebapp.dropbox.appkey';
   const DBX_TOKEN = 'linkwebapp.dropbox.token';
   const DBX_REFRESH = 'linkwebapp.dropbox.refresh';
@@ -193,7 +181,7 @@
   const DBX_FILE = '/links.json';
 
   const $ = id => document.getElementById(id);
-  let links = loadLinks();
+  let links = loadAndMigrateLinks();
 
   function now() { return new Date().toISOString(); }
   function uid() { return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2); }
@@ -338,8 +326,14 @@
   }
   function merge(remote=[]) {
     const map=new Map();
-    for(const x of [...remote,...links]) { const prev=map.get(x.id); if(!prev || (x.updatedAt||'') >= (prev.updatedAt||'')) map.set(x.id,x); }
-    links=[...map.values()]; localStorage.setItem(STORE,JSON.stringify(links)); render();
+    const normalizedRemote = (Array.isArray(remote) ? remote : []).map(normalizeLink).filter(x => x.url);
+    const normalizedLocal = links.map(normalizeLink).filter(x => x.url);
+    for(const x of [...normalizedRemote,...normalizedLocal]) {
+      const prev=map.get(x.id);
+      if(!prev || (x.updatedAt||'') >= (prev.updatedAt||'')) map.set(x.id,x);
+    }
+    links=[...map.values()];
+    saveLinks();
   }
   async function syncDropbox(manual=false) {
     const token=await accessToken(); if(!token) { if(manual) setSync('Dropbox ist nicht verbunden.'); return; }
@@ -350,7 +344,7 @@
       if(dl.ok) { const obj=await dl.json(); remote=Array.isArray(obj)?obj:(obj.links||[]); }
       else if(dl.status!==409) { if(dl.status===401){ localStorage.removeItem(DBX_TOKEN); return syncDropbox(manual); } throw new Error(await dl.text()); }
       merge(remote);
-      const payload=JSON.stringify({version:VERSION,updatedAt:now(),links},null,2);
+      const payload=JSON.stringify({appVersion:VERSION,dataVersion:DATA_VERSION,updatedAt:now(),links},null,2);
       const up=await fetch('https://content.dropboxapi.com/2/files/upload',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/octet-stream','Dropbox-API-Arg':JSON.stringify({path:DBX_FILE,mode:'overwrite',autorename:false,mute:true})},body:payload});
       if(!up.ok) throw new Error(await up.text());
       setSync('Dropbox synchronisiert · '+new Date().toLocaleString('de-DE'), 'synced');
