@@ -43,6 +43,9 @@
     .btn.primary { background:var(--primary); color:#fff; border-color:var(--primary); }
     .btn.ghost { background:#fff; }
     .btn.danger { color:var(--danger); }
+    .btn.danger.active { background:#fff1f0; border-color:#f2b8b5; color:#9f1c14; }
+    .item.remove-mode { border-color:#f2b8b5; cursor:pointer; }
+    .item.remove-mode:hover { background:#fff7f6; }
     .panel { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); margin-bottom:16px; }
     .panel.hidden { display:none; }
     .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -88,8 +91,7 @@
     .dialog-head h2 { margin:0; font-size:20px; }
     @media (max-width: 640px) {
       .wrap { width:min(100% - 16px, 860px); padding-top:16px; }
-      .toolbar { grid-template-columns:1fr 1fr; }
-      .toolbar .search { grid-column:1/-1; grid-row:2; }
+      .toolbar { grid-template-columns:1fr; }
       .form-grid { grid-template-columns:1fr; }
       .form-grid .full { grid-column:auto; }
       .filters { grid-template-columns:1fr; }
@@ -104,7 +106,7 @@
     <div class="topbar">
       <div><h1>Meine Links</h1></div>
       <div class="brand">
-        <div class="version">Version 1.07</div>
+        <div class="version">Version 1.08</div>
         <div class="maker">Made by BreakCheady</div>
       </div>
     </div>
@@ -112,7 +114,7 @@
     <div class="toolbar">
       <button class="btn primary" id="randomBtn">🎲 Zufällig</button>
       <button class="btn ghost" id="addBtn">＋ Hinzufügen</button>
-      <input class="field search" id="searchInput" placeholder="Suchen …" autocomplete="off" />
+      <button class="btn danger" id="removeBtn">− Entfernen</button>
     </div>
 
     <section class="panel hidden" id="formPanel">
@@ -168,7 +170,7 @@
 
 <script>
 (() => {
-  const VERSION = '1.07';
+  const VERSION = '1.08';
   const DATA_VERSION = 2;
   // IMPORTANT: This storage key is intentionally permanent across app updates.
   const STORE = 'linkwebapp.v103.links';
@@ -182,11 +184,37 @@
 
   const $ = id => document.getElementById(id);
   let links = loadAndMigrateLinks();
+  let removeMode = false;
 
   function now() { return new Date().toISOString(); }
   function uid() { return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2); }
   function loadLinks() { try { return JSON.parse(localStorage.getItem(STORE) || '[]'); } catch { return []; } }
-  function saveLinks() { localStorage.setItem(STORE, JSON.stringify(links)); render(); }
+  function normalizeLink(x={}) {
+    const t = x.updatedAt || x.createdAt || now();
+    return {
+      id: x.id || uid(),
+      url: String(x.url || '').trim(),
+      title: String(x.title || ''),
+      category: String(x.category || ''),
+      tags: Array.isArray(x.tags) ? [...new Set(x.tags.map(v=>String(v).trim()).filter(Boolean))] : [],
+      createdAt: x.createdAt || t,
+      updatedAt: t,
+      deletedAt: x.deletedAt || null
+    };
+  }
+  function loadAndMigrateLinks() {
+    const raw = localStorage.getItem(STORE);
+    if (raw && !localStorage.getItem(MIGRATION_BACKUP_KEY)) localStorage.setItem(MIGRATION_BACKUP_KEY, raw);
+    let data = [];
+    try { data = JSON.parse(raw || '[]'); } catch { data = []; }
+    if (!Array.isArray(data) && Array.isArray(data.links)) data = data.links;
+    if (!Array.isArray(data)) data = [];
+    const migrated = data.map(normalizeLink).filter(x=>x.url);
+    localStorage.setItem(DATA_VERSION_KEY, String(DATA_VERSION));
+    localStorage.setItem(STORE, JSON.stringify(migrated));
+    return migrated;
+  }
+  function saveLinks() { localStorage.setItem(STORE, JSON.stringify(links)); localStorage.setItem(DATA_VERSION_KEY, String(DATA_VERSION)); render(); }
   function normUrl(v) { let x = v.trim(); if (!/^https?:\/\//i.test(x)) x = 'https://' + x; return x; }
   function deriveTitle(url) {
     try {
@@ -207,7 +235,7 @@
   function activeLinks() { return links.filter(x => !x.deletedAt); }
 
   function render() {
-    const q = (($('searchInput').value || '') + ' ' + ($('filterInput').value || '')).trim().toLowerCase();
+    const q = ($('filterInput').value || '').trim().toLowerCase();
     const cat = $('categoryFilter').value;
     const cats = [...new Set(activeLinks().map(x=>x.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de'));
     const prev = $('categoryFilter').value;
@@ -223,7 +251,7 @@
       return;
     }
     $('linkList').innerHTML = visible.map(x => `
-      <article class="item" data-id="${x.id}">
+      <article class="item${removeMode ? ' remove-mode' : ''}" data-id="${x.id}">
         <div class="item-main" data-open="${x.id}">
           <img class="favicon" src="${favicon(x.url)}" alt="" onerror="this.style.visibility='hidden'" />
           <div class="item-text">
@@ -240,6 +268,12 @@
   }
 
   $('addBtn').onclick = () => { $('formPanel').classList.toggle('hidden'); if (!$('formPanel').classList.contains('hidden')) $('urlInput').focus(); };
+  $('removeBtn').onclick = () => {
+    removeMode = !removeMode;
+    $('removeBtn').classList.toggle('active', removeMode);
+    $('removeBtn').textContent = removeMode ? '✓ Entfernen beenden' : '− Entfernen';
+    render();
+  };
   $('cancelBtn').onclick = () => $('formPanel').classList.add('hidden');
   $('linkForm').onsubmit = e => {
     e.preventDefault();
@@ -253,10 +287,12 @@
     const arr = activeLinks(); if (!arr.length) return alert('Es sind noch keine Einträge vorhanden.');
     const x = arr[Math.floor(Math.random()*arr.length)]; location.href = x.url;
   };
-  ['searchInput','filterInput'].forEach(id => $(id).addEventListener('input',render));
+  $('filterInput').addEventListener('input',render);
   $('categoryFilter').addEventListener('change',render);
 
   $('linkList').onclick = e => {
+    const article = e.target.closest('[data-id]');
+    if (removeMode && article) { removeLink(article.dataset.id); return; }
     const open = e.target.closest('[data-open]'); if (open) { const x=links.find(l=>l.id===open.dataset.open); if(x) location.href=x.url; return; }
     const edit = e.target.closest('[data-edit]'); if (edit) openEdit(edit.dataset.edit);
     const del = e.target.closest('[data-delete]'); if (del) removeLink(del.dataset.delete);
