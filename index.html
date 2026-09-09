@@ -109,7 +109,7 @@
     <div class="topbar">
       <div><h1>Meine Links</h1></div>
       <div class="brand">
-        <div class="version">Version 1.12</div>
+        <div class="version">Version 1.13</div>
         <div class="maker">Made by BreakCheady</div>
       </div>
     </div>
@@ -173,7 +173,7 @@
 
 <script>
 (() => {
-  const VERSION = '1.11';
+  const VERSION = '1.13';
   const DATA_VERSION = 2;
   // IMPORTANT: This storage key is intentionally permanent across app updates.
   const STORE = 'linkwebapp.v103.links';
@@ -324,8 +324,13 @@
     saveLinks(); e.target.reset(); $('formPanel').classList.add('hidden'); autoSync();
   };
   $('randomBtn').onclick = () => {
-    const arr = activeLinks(); if (!arr.length) return alert('Es sind noch keine Einträge vorhanden.');
-    const x = arr[Math.floor(Math.random()*arr.length)]; location.href = x.url;
+    const cat = $('categoryFilter').value;
+    const arr = activeLinks().filter(x => !cat || x.category === cat);
+    if (!arr.length) {
+      return alert(cat ? `In der Kategorie „${cat}“ sind keine Einträge vorhanden.` : 'Es sind noch keine Einträge vorhanden.');
+    }
+    const x = arr[Math.floor(Math.random()*arr.length)];
+    location.href = x.url;
   };
   $('filterInput').addEventListener('input',render);
   $('categoryFilter').addEventListener('change',render);
