@@ -109,7 +109,7 @@
     <div class="topbar">
       <div><h1>Meine Links</h1></div>
       <div class="brand">
-        <div class="version">Version 1.14</div>
+        <div class="version">Version 1.15</div>
         <div class="maker">Made by BreakCheady</div>
       </div>
     </div>
@@ -181,7 +181,7 @@
 
 <script>
 (() => {
-  const VERSION = '1.14';
+  const VERSION = '1.15';
   const DATA_VERSION = 2;
   // IMPORTANT: This storage key is intentionally permanent across app updates.
   const STORE = 'linkwebapp.v103.links';
@@ -383,12 +383,31 @@
     autoSync();
   };
   $('randomBtn').onclick = () => {
+    const tagQuery = ($('filterInput').value || '').trim().toLowerCase();
     const cat = $('categoryFilter').value;
-    const arr = activeLinks().filter(x => !cat || x.category === cat);
-    if (!arr.length) {
-      return alert(cat ? `In der Kategorie „${cat}“ sind keine Einträge vorhanden.` : 'Es sind noch keine Einträge vorhanden.');
+    let arr = activeLinks();
+
+    // Priorität 1: Exakter Tag-Treffer im Such-/Filterfeld.
+    if (tagQuery) {
+      const tagged = arr.filter(x =>
+        (x.tags || []).some(tag => String(tag).trim().toLowerCase() === tagQuery)
+      );
+      if (tagged.length) {
+        arr = tagged;
+      } else if (cat) {
+        // Priorität 2: Kein passender Tag -> gewählte Kategorie.
+        arr = arr.filter(x => x.category === cat);
+      }
+      // Priorität 3: Kein Tag-Treffer und keine Kategorie -> alle Einträge.
+    } else if (cat) {
+      arr = arr.filter(x => x.category === cat);
     }
-    const x = arr[Math.floor(Math.random()*arr.length)];
+
+    if (!arr.length) {
+      return alert('Für die aktuelle Auswahl sind keine Einträge vorhanden.');
+    }
+
+    const x = arr[Math.floor(Math.random() * arr.length)];
     location.href = x.url;
   };
   $('filterInput').addEventListener('input',render);
